@@ -40,6 +40,33 @@ export class Orchestrator {
     // コードをパース
     const lines = this.parser.parse(code);
 
+    // 完全自由形式（**FREE）のチェック
+    const hasFreeFormat = lines.some(line => line.specificationType === 'FREE');
+    if (hasFreeFormat) {
+      return {
+        valid: false,
+        issues: [{
+          severity: 'error',
+          category: 'structure',
+          line: lines.findIndex(line => line.specificationType === 'FREE') + 1,
+          column: 1,
+          message: '完全自由形式（**FREE）のRPGコードは現在サポートされていません。',
+          rule: 'UNSUPPORTED_FREE_FORMAT',
+          ruleDescription: 'このツールは固定形式および桁制限付き自由形式のRPGコードのみをサポートしています。',
+          codeSnippet: lines.find(line => line.specificationType === 'FREE')?.rawContent || ''
+        }],
+        summary: {
+          totalIssues: 1,
+          errors: 1,
+          warnings: 0,
+          infos: 0,
+          checkedLines: 0,
+          specificationCounts: {} as Record<SpecificationType, number>
+        },
+        filePath
+      };
+    }
+
     // 全てのチェッカーを実行
     const issues = this.runAllCheckers(lines, checkLevel);
 
@@ -62,6 +89,24 @@ export class Orchestrator {
    */
   checkSpecificationOrder(code: string): { valid: boolean; issues: Issue[] } {
     const lines = this.parser.parse(code);
+    
+    // 完全自由形式（**FREE）のチェック
+    const hasFreeFormat = lines.some(line => line.specificationType === 'FREE');
+    if (hasFreeFormat) {
+      return {
+        valid: false,
+        issues: [{
+          severity: 'error',
+          category: 'structure',
+          line: lines.findIndex(line => line.specificationType === 'FREE') + 1,
+          column: 1,
+          message: '完全自由形式（**FREE）のRPGコードは現在サポートされていません。',
+          rule: 'UNSUPPORTED_FREE_FORMAT',
+          codeSnippet: lines.find(line => line.specificationType === 'FREE')?.rawContent || ''
+        }]
+      };
+    }
+    
     const structureChecker = new StructureChecker(this.considerDBCS);
     const issues = structureChecker.check(lines, 'basic')
       .filter((issue: Issue) => issue.rule === 'SPEC_ORDER');
@@ -79,6 +124,24 @@ export class Orchestrator {
    */
   checkColumnPositions(code: string): { valid: boolean; issues: Issue[] } {
     const lines = this.parser.parse(code);
+    
+    // 完全自由形式（**FREE）のチェック
+    const hasFreeFormat = lines.some(line => line.specificationType === 'FREE');
+    if (hasFreeFormat) {
+      return {
+        valid: false,
+        issues: [{
+          severity: 'error',
+          category: 'structure',
+          line: lines.findIndex(line => line.specificationType === 'FREE') + 1,
+          column: 1,
+          message: '完全自由形式（**FREE）のRPGコードは現在サポートされていません。',
+          rule: 'UNSUPPORTED_FREE_FORMAT',
+          codeSnippet: lines.find(line => line.specificationType === 'FREE')?.rawContent || ''
+        }]
+      };
+    }
+    
     const structureChecker = new StructureChecker(this.considerDBCS);
     const issues = structureChecker.check(lines, 'standard')
       .filter((issue: Issue) =>
@@ -100,6 +163,24 @@ export class Orchestrator {
    */
   checkNamingConventions(code: string): { valid: boolean; issues: Issue[] } {
     const lines = this.parser.parse(code);
+    
+    // 完全自由形式（**FREE）のチェック
+    const hasFreeFormat = lines.some(line => line.specificationType === 'FREE');
+    if (hasFreeFormat) {
+      return {
+        valid: false,
+        issues: [{
+          severity: 'error',
+          category: 'structure',
+          line: lines.findIndex(line => line.specificationType === 'FREE') + 1,
+          column: 1,
+          message: '完全自由形式（**FREE）のRPGコードは現在サポートされていません。',
+          rule: 'UNSUPPORTED_FREE_FORMAT',
+          codeSnippet: lines.find(line => line.specificationType === 'FREE')?.rawContent || ''
+        }]
+      };
+    }
+    
     const namingChecker = new NamingChecker();
     const issues = namingChecker.check(lines, 'standard');
 
@@ -116,6 +197,24 @@ export class Orchestrator {
    */
   checkBestPractices(code: string): { valid: boolean; issues: Issue[] } {
     const lines = this.parser.parse(code);
+    
+    // 完全自由形式（**FREE）のチェック
+    const hasFreeFormat = lines.some(line => line.specificationType === 'FREE');
+    if (hasFreeFormat) {
+      return {
+        valid: false,
+        issues: [{
+          severity: 'error',
+          category: 'structure',
+          line: lines.findIndex(line => line.specificationType === 'FREE') + 1,
+          column: 1,
+          message: '完全自由形式（**FREE）のRPGコードは現在サポートされていません。',
+          rule: 'UNSUPPORTED_FREE_FORMAT',
+          codeSnippet: lines.find(line => line.specificationType === 'FREE')?.rawContent || ''
+        }]
+      };
+    }
+    
     const bestPracticeChecker = new BestPracticeChecker(this.customRulesPath);
     const issues = bestPracticeChecker.check(lines, 'standard');
 

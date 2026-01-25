@@ -23,7 +23,7 @@ import { CheckLevel, Language, CheckOptions } from './types/index.js';
 class RPGStandardsCheckerServer {
   private server: Server;
   private fileReader: FileReader;
-  private readonly version = '0.0.2';
+  private readonly version = '0.0.3';
 
   constructor() {
     this.server = new Server(
@@ -95,7 +95,7 @@ class RPGStandardsCheckerServer {
     return [
       {
         name: 'check_rpg_code',
-        description: 'Comprehensively check RPG code. Validates all items including structure, syntax, naming conventions, and best practices.',
+        description: 'Comprehensively check RPG code. Validates all items including structure, syntax, naming conventions, and best practices. Note: For better performance and reduced token usage, consider using check_rpg_file instead when checking files.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -130,7 +130,7 @@ class RPGStandardsCheckerServer {
       },
       {
         name: 'check_specification_order',
-        description: 'Check if specification order (H→F→D→P→I→C→O) is correct.',
+        description: 'Check if specification order (H→F→D→P→I→C→O) is correct. Note: For better performance, consider using check_rpg_file for file-based checks.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -150,7 +150,7 @@ class RPGStandardsCheckerServer {
       },
       {
         name: 'check_column_positions',
-        description: 'Check if column position rules for each specification are correct.',
+        description: 'Check if column position rules for each specification are correct. Note: For better performance, consider using check_rpg_file for file-based checks.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -175,7 +175,7 @@ class RPGStandardsCheckerServer {
       },
       {
         name: 'check_naming_conventions',
-        description: 'Check naming conventions for variables, procedures, etc.',
+        description: 'Check naming conventions for variables, procedures, etc. Note: For better performance, consider using check_rpg_file for file-based checks.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -195,7 +195,7 @@ class RPGStandardsCheckerServer {
       },
       {
         name: 'check_best_practices',
-        description: 'Check best practices (use of deprecated features, indicators, etc.).',
+        description: 'Check best practices (use of deprecated features, indicators, etc.). Note: For better performance, consider using check_rpg_file for file-based checks.',
         inputSchema: {
           type: 'object',
           properties: {
@@ -219,7 +219,7 @@ class RPGStandardsCheckerServer {
       },
       {
         name: 'check_rpg_file',
-        description: 'Read and comprehensively check an RPG file.',
+        description: 'Read and comprehensively check an RPG file. Recommended: This tool is more efficient than check_rpg_code as it reduces token usage by reading files directly instead of passing code content.',
         inputSchema: {
           type: 'object',
           properties: {

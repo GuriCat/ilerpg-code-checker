@@ -1,0 +1,7 @@
+**FREE
+// This is a fully free-format RPG program
+dcl-s message char(50);
+message = 'Hello, World!';
+dsply message;
+*inlr = *on;
+return;
