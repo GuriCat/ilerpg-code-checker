@@ -189,10 +189,15 @@ export class StructureChecker implements Checker {
       });
     }
 
-    // ファイル名（7-16桁）のチェック（継続行は除外）
-    if (line.rawContent.length >= 16 && !line.isContinuation) {
+    // Skip further checks for continuation lines (blank filename field is normal for continuation)
+    if (line.isContinuation) {
+      return issues;
+    }
+
+    // Check filename field (columns 7-16)
+    if (line.rawContent.length >= 16 && checkLevel !== 'basic') {
       const fileName = line.rawContent.substring(6, 16).trim();
-      if (fileName.length === 0 && checkLevel !== 'basic') {
+      if (fileName.length === 0) {
         issues.push({
           severity: 'error',
           category: 'structure',
@@ -201,8 +206,51 @@ export class StructureChecker implements Checker {
           endColumn: 16,
           message: 'F仕様書のファイル名（7-16桁）が空です。',
           rule: 'F_SPEC_FILENAME',
+          ruleDescription: 'F仕様書の7-16桁にはファイル名を記述する必要があります。継続行の場合はファイル名フィールドを空白にします。',
+          suggestion: 'ファイル名を記述してください。',
           codeSnippet: line.rawContent
         });
+      }
+    }
+
+    // Check file type (column 17) for standard level and above
+    if (line.rawContent.length >= 17 && checkLevel !== 'basic') {
+      const fileType = line.rawContent[16].toUpperCase();
+      const validTypes = ['I', 'O', 'U', 'C', ' '];
+      if (!validTypes.includes(fileType)) {
+        issues.push({
+          severity: 'error',
+          category: 'structure',
+          line: line.lineNumber,
+          column: 17,
+          message: `F仕様書のファイルタイプ（17桁）が不正です: '${fileType}'`,
+          rule: 'F_SPEC_FILE_TYPE',
+          ruleDescription: '有効なファイルタイプ: I（入力）, O（出力）, U（更新）, C（組合せ）, または空白',
+          codeSnippet: line.rawContent
+        });
+      }
+    }
+
+    // デバイス（36-42桁）のチェック（standardレベル以上）
+    if (line.rawContent.length >= 42 && checkLevel !== 'basic') {
+      const device = line.rawContent.substring(35, 42).trim();
+      if (device.length > 0) {
+        const validDevices = ['DISK', 'PRINTER', 'WORKSTN', 'SPECIAL'];
+        const deviceUpper = device.toUpperCase();
+        if (!validDevices.some(valid => deviceUpper.startsWith(valid))) {
+          issues.push({
+            severity: 'warning',
+            category: 'structure',
+            line: line.lineNumber,
+            column: 36,
+            endColumn: 42,
+            message: `F仕様書のデバイス（36-42桁）が一般的でない値です: '${device}'`,
+            rule: 'F_SPEC_DEVICE',
+            ruleDescription: '一般的なデバイス: DISK, PRINTER, WORKSTN, SPECIAL',
+            suggestion: 'デバイス名が正しいか確認してください。',
+            codeSnippet: line.rawContent
+          });
+        }
       }
     }
 

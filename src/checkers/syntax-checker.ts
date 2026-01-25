@@ -105,21 +105,8 @@ export class SyntaxChecker implements Checker {
           }
         }
 
-        // 継続行マーカーのチェック（7桁目が-または+）
-        if (line.rawContent.length >= 7) {
-          const marker = line.rawContent[6];
-          if (marker !== '-' && marker !== '+') {
-            issues.push({
-              severity: 'error',
-              category: 'syntax',
-              line: line.lineNumber,
-              column: 7,
-              message: `継続行マーカーが不正です: '${marker}'（-または+である必要があります）`,
-              rule: 'INVALID_CONTINUATION_MARKER',
-              codeSnippet: line.rawContent
-            });
-          }
-        }
+        // Note: Continuation lines are identified by blank name fields, not by markers
+        // No additional marker validation needed here
       }
     }
 

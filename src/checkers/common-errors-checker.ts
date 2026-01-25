@@ -1,14 +1,14 @@
 /**
- * ILE-RPG コーディング標準チェッカー - よくあるエラーチェッカー
- * RPGプログラミングでよく発生するエラーパターンを検出
+ * ILE-RPG Coding Standards Checker - Common Errors Checker
+ * Detects common error patterns in RPG programming
  */
 
 import { ParsedLine, Issue, CheckLevel, Checker } from '../types/index.js';
 import { LineAnalyzer } from '../parser/line-analyzer.js';
 
 /**
- * よくあるエラーチェッカークラス
- * RPGコードでよく発生するエラーパターンを検出
+ * Common Errors Checker class
+ * Detects common error patterns in RPG code
  */
 export class CommonErrorsChecker implements Checker {
   name = 'CommonErrorsChecker';
@@ -19,35 +19,35 @@ export class CommonErrorsChecker implements Checker {
   }
 
   /**
-   * よくあるエラーのチェックを実行
-   * @param lines パース済み行の配列
-   * @param checkLevel チェックレベル
-   * @returns 検出された問題の配列
+   * Execute common errors check
+   * @param lines Array of parsed lines
+   * @param checkLevel Check level
+   * @returns Array of detected issues
    */
   check(lines: ParsedLine[], checkLevel: CheckLevel): Issue[] {
     const issues: Issue[] = [];
 
-    // F仕様書のスペース不足チェック
+    // Check F-spec spacing issues
     issues.push(...this.checkFSpecSpacing(lines));
 
-    // D仕様書の桁位置エラーチェック
+    // Check D-spec column errors
     issues.push(...this.checkDSpecColumnErrors(lines));
 
-    // 継続行の誤りチェック
+    // Check continuation line errors
     issues.push(...this.checkContinuationErrors(lines));
 
-    // /FREEの誤用チェック
+    // Check /FREE misuse
     issues.push(...this.checkFreeFormMisuse(lines));
 
-    // 仕様書順序エラーの詳細チェック
+    // Check specification order errors in detail
     issues.push(...this.checkSpecificationOrderErrors(lines));
 
-    // 括弧の対応チェック（standardレベル以上）
+    // Check parentheses matching (standard level and above)
     if (checkLevel !== 'basic') {
       issues.push(...this.checkParenthesesMatching(lines));
     }
 
-    // 文字列リテラルのチェック（standardレベル以上）
+    // Check string literals (standard level and above)
     if (checkLevel !== 'basic') {
       issues.push(...this.checkStringLiterals(lines));
     }
@@ -56,9 +56,9 @@ export class CommonErrorsChecker implements Checker {
   }
 
   /**
-   * F仕様書のスペース不足をチェック
-   * @param lines パース済み行の配列
-   * @returns 検出された問題の配列
+   * Check F-spec spacing issues
+   * @param lines Array of parsed lines
+   * @returns Array of detected issues
    */
   private checkFSpecSpacing(lines: ParsedLine[]): Issue[] {
     const issues: Issue[] = [];
@@ -66,12 +66,12 @@ export class CommonErrorsChecker implements Checker {
     for (const line of lines) {
       if (line.specificationType !== 'F' || line.isComment) continue;
 
-      // ファイル名フィールド（7-16桁）の後にスペースがない場合
+      // Check if there's no space after filename field (columns 7-16)
       if (line.rawContent.length >= 17) {
         const fileName = line.rawContent.substring(6, 16);
         const nextChar = line.rawContent[16];
 
-        // ファイル名が10文字使用されており、次の桁にスペースがない場合
+        // If filename uses all 10 characters and next column is not a space
         if (fileName.trim().length === 10 && nextChar !== ' ') {
           issues.push({
             severity: 'error',
@@ -92,9 +92,9 @@ export class CommonErrorsChecker implements Checker {
   }
 
   /**
-   * D仕様書の桁位置エラーをチェック
-   * @param lines パース済み行の配列
-   * @returns 検出された問題の配列
+   * Check D-spec column errors
+   * @param lines Array of parsed lines
+   * @returns Array of detected issues
    */
   private checkDSpecColumnErrors(lines: ParsedLine[]): Issue[] {
     const issues: Issue[] = [];
@@ -102,7 +102,7 @@ export class CommonErrorsChecker implements Checker {
     for (const line of lines) {
       if (line.specificationType !== 'D' || line.isComment || line.isContinuation) continue;
 
-      // 名前フィールド（7-21桁）が空で、他のフィールドに値がある場合
+      // If name field (columns 7-21) is empty but other fields have values
       const name = line.rawContent.substring(6, 21).trim();
       const hasOtherData = line.rawContent.length > 21 && line.rawContent.substring(21).trim().length > 0;
 
@@ -121,7 +121,7 @@ export class CommonErrorsChecker implements Checker {
         });
       }
 
-      // 開始位置と終了位置の整合性チェック
+      // Check consistency of from/to positions
       if (line.rawContent.length >= 39) {
         const fromPos = line.rawContent.substring(25, 32).trim();
         const toPos = line.rawContent.substring(32, 39).trim();

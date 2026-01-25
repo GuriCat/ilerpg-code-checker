@@ -53,13 +53,14 @@ export class NamingChecker implements Checker {
     const issues: Issue[] = [];
 
     for (const line of lines) {
-      if (line.specificationType !== 'D' || line.isComment) continue;
+      // Skip comments and continuation lines
+      if (line.specificationType !== 'D' || line.isComment || line.isContinuation) continue;
 
-      // 変数名を抽出
+      // Extract variable name
       const varName = this.analyzer.extractVariableName(line);
       if (!varName) continue;
 
-      // 命名規約のチェック
+      // Check naming conventions
       const namingIssues = this.validateVariableName(varName, line.lineNumber, checkLevel);
       issues.push(...namingIssues);
     }
@@ -202,16 +203,17 @@ export class NamingChecker implements Checker {
     const issues: Issue[] = [];
 
     for (const line of lines) {
-      if (line.specificationType !== 'P' || line.isComment) continue;
+      // Skip comments and continuation lines
+      if (line.specificationType !== 'P' || line.isComment || line.isContinuation) continue;
 
-      // プロシージャ名を抽出
+      // Extract procedure name
       const procName = this.analyzer.extractProcedureName(line);
       if (!procName) continue;
 
-      // 開始行のみチェック（24桁目が'B'）
+      // Check only begin lines (column 24 is 'B')
       if (line.columnData?.beginEnd?.toUpperCase() !== 'B') continue;
 
-      // 命名規約のチェック
+      // Check naming conventions
       const namingIssues = this.validateProcedureName(procName, line.lineNumber, checkLevel);
       issues.push(...namingIssues);
     }

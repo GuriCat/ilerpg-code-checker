@@ -28,7 +28,7 @@ class RPGStandardsCheckerServer {
     this.server = new Server(
       {
         name: 'ilerpg-code-checker',
-        version: '1.0.0'
+        version: '0.0.2'
       },
       {
         capabilities: {

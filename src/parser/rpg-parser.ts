@@ -121,21 +121,51 @@ export class RPGParser {
   private isContinuationLine(line: string, specType: SpecificationType): boolean {
     if (line.length < 7) return false;
     
-    // 桁固定形式の継続行判定
+    // Fixed-format continuation line detection
+    // A line is a continuation if its name field is completely blank
     if (specType !== 'FREE' && specType !== 'UNKNOWN') {
-      const col7 = line[6];
-      
-      // 7桁目が'-'または'+'の場合は継続行
-      if (col7 === '-' || col7 === '+') {
-        return true;
-      }
-      
-      // F仕様書の場合、ファイル名フィールド（7-16桁）が空白なら継続行
-      if (specType === 'F' && line.length >= 16) {
-        const fileName = line.substring(6, 16).trim();
-        if (fileName.length === 0) {
-          return true;
-        }
+      switch (specType) {
+        case 'F':
+          // F-spec: filename field (columns 7-16) must be blank
+          if (line.length >= 16) {
+            const fileName = line.substring(6, 16).trim();
+            return fileName.length === 0;
+          }
+          break;
+          
+        case 'D':
+        case 'P':
+          // D-spec and P-spec: name field (columns 7-21) must be blank
+          if (line.length >= 21) {
+            const name = line.substring(6, 21).trim();
+            return name.length === 0;
+          }
+          break;
+          
+        case 'I':
+          // I-spec: record name field (columns 7-16) must be blank
+          if (line.length >= 16) {
+            const recordName = line.substring(6, 16).trim();
+            return recordName.length === 0;
+          }
+          break;
+          
+        case 'C':
+          // C-spec: factor 1 field (columns 12-25) must be blank for continuation
+          // Note: C-spec continuation is more complex, this is a simplified check
+          if (line.length >= 25) {
+            const factor1 = line.substring(11, 25).trim();
+            return factor1.length === 0;
+          }
+          break;
+          
+        case 'O':
+          // O-spec: filename field (columns 7-16) must be blank
+          if (line.length >= 16) {
+            const fileName = line.substring(6, 16).trim();
+            return fileName.length === 0;
+          }
+          break;
       }
     }
     
