@@ -46,3 +46,7 @@ coverage/
 
 # Custom rules (user-specific)
 custom-rules.json
+
+# Project status files (not for GitHub)
+CURRENT_STATUS_SUMMARY.md
+PROJECT_STATUS.md

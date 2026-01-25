@@ -92,6 +92,8 @@ npm run build
 
 3. Add to MCP configuration file:
 
+#### For IBM Bob IDE
+
 Add the following to `c:\Users\user\AppData\Roaming\Bob-IDE\User\globalStorage\ibm.bob-code\settings\mcp_settings.json`:
 
 ```json
@@ -99,7 +101,7 @@ Add the following to `c:\Users\user\AppData\Roaming\Bob-IDE\User\globalStorage\i
   "mcpServers": {
     "ilerpg-code-checker": {
       "command": "node",
-      "args": ["e:\\ilerpg-code-checker\\build\\index.js"],
+      "args": ["<path-to-project>\\build\\index.js"],
       "disabled": false,
       "alwaysAllow": [],
       "disabledTools": []
@@ -107,6 +109,38 @@ Add the following to `c:\Users\user\AppData\Roaming\Bob-IDE\User\globalStorage\i
   }
 }
 ```
+
+#### For Claude Desktop
+
+Add to your Claude Desktop MCP settings file (typically `~/Library/Application Support/Claude/claude_desktop_config.json` on macOS or `%APPDATA%\Claude\claude_desktop_config.json` on Windows):
+
+```json
+{
+  "mcpServers": {
+    "ilerpg-code-checker": {
+      "command": "node",
+      "args": ["<path-to-project>/build/index.js"]
+    }
+  }
+}
+```
+
+#### For Cline (VS Code Extension)
+
+Add to your Cline MCP settings in VS Code:
+
+```json
+{
+  "mcpServers": {
+    "ilerpg-code-checker": {
+      "command": "node",
+      "args": ["<path-to-project>/build/index.js"]
+    }
+  }
+}
+```
+
+**Note:** Replace `<path-to-project>` with the actual absolute path to your ilerpg-code-checker directory.
 
 ## Usage
 
@@ -393,11 +427,11 @@ IBM Bob
 
 ## Version
 
-1.0.0
+0.0.1
 
 ## Changelog
 
-### 1.0.0 (2026-01-25)
+### 0.0.1 (2026-01-25)
 - Initial release
 - Basic check functionality implementation
 - 6 MCP tools provided
@@ -407,7 +441,6 @@ IBM Bob
 
 ## References
 
-- ILE-RPGコーディング標準.md
 - IBM i Information Center - ILE RPG Reference
 
 ## Support

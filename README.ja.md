@@ -92,6 +92,8 @@ npm run build
 
 3. MCP設定ファイルへの追加：
 
+#### IBM Bob IDE の場合
+
 `c:\Users\user\AppData\Roaming\Bob-IDE\User\globalStorage\ibm.bob-code\settings\mcp_settings.json` に以下を追加：
 
 ```json
@@ -99,7 +101,7 @@ npm run build
   "mcpServers": {
     "ilerpg-code-checker": {
       "command": "node",
-      "args": ["e:\\ilerpg-code-checker\\build\\index.js"],
+      "args": ["<プロジェクトへのパス>\\build\\index.js"],
       "disabled": false,
       "alwaysAllow": [],
       "disabledTools": []
@@ -107,6 +109,38 @@ npm run build
   }
 }
 ```
+
+#### Claude Desktop の場合
+
+Claude Desktop の MCP 設定ファイル（通常、macOS では `~/Library/Application Support/Claude/claude_desktop_config.json`、Windows では `%APPDATA%\Claude\claude_desktop_config.json`）に以下を追加：
+
+```json
+{
+  "mcpServers": {
+    "ilerpg-code-checker": {
+      "command": "node",
+      "args": ["<プロジェクトへのパス>/build/index.js"]
+    }
+  }
+}
+```
+
+#### Cline (VS Code 拡張機能) の場合
+
+VS Code の Cline MCP 設定に以下を追加：
+
+```json
+{
+  "mcpServers": {
+    "ilerpg-code-checker": {
+      "command": "node",
+      "args": ["<プロジェクトへのパス>/build/index.js"]
+    }
+  }
+}
+```
+
+**注意:** `<プロジェクトへのパス>` を ilerpg-code-checker ディレクトリへの実際の絶対パスに置き換えてください。
 
 ## 使用方法
 
@@ -393,11 +427,11 @@ IBM Bob
 
 ## バージョン
 
-1.0.0
+0.0.1
 
 ## 更新履歴
 
-### 1.0.0 (2026-01-25)
+### 0.0.1 (2026-01-25)
 - 初版リリース
 - 基本的なチェック機能の実装
 - 6つのMCPツールの提供
@@ -407,7 +441,6 @@ IBM Bob
 
 ## 参考資料
 
-- ILE-RPGコーディング標準.md
 - IBM i Information Center - ILE RPG Reference
 
 ## サポート

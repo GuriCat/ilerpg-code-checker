@@ -5,7 +5,7 @@
 **Project Name:** ILE-RPG Code Checker (formerly rpg-standards-checker)  
 **Type:** MCP (Model Context Protocol) Server  
 **Language:** TypeScript  
-**Version:** 1.0.0  
+**Version:** 0.0.1
 **Status:** ✅ **COMPLETED**  
 **Last Updated:** 2026-01-25
 
@@ -264,7 +264,9 @@ e:\rpg-standards-checker\
 e:\ilerpg-code-checker\
 ```
 
-### MCP Configuration (After Rename)
+### MCP Configuration
+
+#### For IBM Bob IDE
 
 Add to `c:\Users\user\AppData\Roaming\Bob-IDE\User\globalStorage\ibm.bob-code\settings\mcp_settings.json`:
 
@@ -273,7 +275,7 @@ Add to `c:\Users\user\AppData\Roaming\Bob-IDE\User\globalStorage\ibm.bob-code\se
   "mcpServers": {
     "ilerpg-code-checker": {
       "command": "node",
-      "args": ["e:\\ilerpg-code-checker\\build\\index.js"],
+      "args": ["<path-to-project>\\build\\index.js"],
       "disabled": false,
       "alwaysAllow": [],
       "disabledTools": []
@@ -281,6 +283,38 @@ Add to `c:\Users\user\AppData\Roaming\Bob-IDE\User\globalStorage\ibm.bob-code\se
   }
 }
 ```
+
+#### For Claude Desktop
+
+Add to Claude Desktop MCP settings file:
+
+```json
+{
+  "mcpServers": {
+    "ilerpg-code-checker": {
+      "command": "node",
+      "args": ["<path-to-project>/build/index.js"]
+    }
+  }
+}
+```
+
+#### For Cline (VS Code Extension)
+
+Add to Cline MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "ilerpg-code-checker": {
+      "command": "node",
+      "args": ["<path-to-project>/build/index.js"]
+    }
+  }
+}
+```
+
+Replace `<path-to-project>` with the actual path to your ilerpg-code-checker directory.
 
 ## Usage Example
 
@@ -317,7 +351,7 @@ use_mcp_tool({
 
 ## Version History
 
-### Version 1.0.0 (2026-01-25)
+### Version 0.0.1 (2026-01-25)
 - ✅ Initial release
 - ✅ Core checking functionality
 - ✅ 6 MCP tools
@@ -347,7 +381,6 @@ use_mcp_tool({
 
 ## Reference Documents
 
-- ILE-RPGコーディング標準.md (//172.16.0.114/home/GURICAT/Bob_TestCase (Early Access)/ILE-RPGコーディング標準.md)
 - IBM i Information Center - ILE RPG Reference
 
 ## Development Environment
