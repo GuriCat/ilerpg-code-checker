@@ -4,73 +4,64 @@
 
 ### 1.1 System Architecture
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    MCP Client (Bob)                      │
-└─────────────────────┬───────────────────────────────────┘
-                      │ MCP Protocol
-┌─────────────────────▼───────────────────────────────────┐
-│              RPG Standards Checker MCP Server            │
-│  ┌───────────────────────────────────────────────────┐  │
-│  │              Tool Interface Layer                  │  │
-│  │  - check_rpg_code                                 │  │
-│  │  - check_specification_order                      │  │
-│  │  - check_column_positions                         │  │
-│  │  - check_naming_conventions                       │  │
-│  │  - check_best_practices                           │  │
-│  │  - check_rpg_file                                 │  │
-│  └───────────────────┬───────────────────────────────┘  │
-│  ┌───────────────────▼───────────────────────────────┐  │
-│  │           Orchestration Layer                      │  │
-│  │  - Check level management (basic/standard/strict) │  │
-│  │  - Result aggregation                             │  │
-│  │  - Report generation                              │  │
-│  └───────────────────┬───────────────────────────────┘  │
-│  ┌───────────────────▼───────────────────────────────┐  │
-│  │              Parser Layer                          │  │
-│  │  - Line-by-line parsing                           │  │
-│  │  - Specification type detection                   │  │
-│  │  - Token extraction                               │  │
-│  └───────────────────┬───────────────────────────────┘  │
-│  ┌───────────────────▼───────────────────────────────┐  │
-│  │              Checker Layer                         │  │
-│  │  ┌─────────────────────────────────────────────┐  │  │
-│  │  │ Structure Checker                           │  │  │
-│  │  │ - Specification order                       │  │  │
-│  │  │ - Column positions                          │  │  │
-│  │  │ - Line length                               │  │  │
-│  │  └─────────────────────────────────────────────┘  │  │
-│  │  ┌─────────────────────────────────────────────┐  │  │
-│  │  │ Syntax Checker                              │  │  │
-│  │  │ - Line continuation                         │  │  │
-│  │  │ - Multiple statements                       │  │  │
-│  │  │ - FREE/END-FREE matching                    │  │  │
-│  │  └─────────────────────────────────────────────┘  │  │
-│  │  ┌─────────────────────────────────────────────┐  │  │
-│  │  │ Naming Checker                              │  │  │
-│  │  │ - Variable naming conventions               │  │  │
-│  │  │ - Procedure naming conventions              │  │  │
-│  │  │ - Special character restrictions            │  │  │
-│  │  └─────────────────────────────────────────────┘  │  │
-│  │  ┌─────────────────────────────────────────────┐  │  │
-│  │  │ Best Practice Checker                       │  │  │
-│  │  │ - Deprecated features                       │  │  │
-│  │  │ - Indicator usage                           │  │  │
-│  │  │ - FREE format recommendation                │  │  │
-│  │  └─────────────────────────────────────────────┘  │  │
-│  │  ┌─────────────────────────────────────────────┐  │  │
-│  │  │ Common Errors Checker                       │  │  │
-│  │  │ - F-spec space issues                       │  │  │
-│  │  │ - D-spec column errors                      │  │  │
-│  │  │ - Continuation errors                       │  │  │
-│  │  └─────────────────────────────────────────────┘  │  │
-│  └───────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────┐  │
-│  │              Rules Engine                          │  │
-│  │  - Rule definitions from standards document       │  │
-│  │  - Rule evaluation logic                          │  │
-│  └───────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────┘
+```mermaid
+graph TB
+    Client[MCP Client<br/>IBM Bob / Claude Desktop / Cline]
+    
+    subgraph Server[RPG Standards Checker MCP Server]
+        subgraph Tools[Tool Interface Layer]
+            T1[check_rpg_code]
+            T2[check_specification_order]
+            T3[check_column_positions]
+            T4[check_naming_conventions]
+            T5[check_best_practices]
+            T6[check_rpg_file]
+        end
+        
+        subgraph Orchestration[Orchestration Layer]
+            O1[Check Level Management<br/>basic/standard/strict]
+            O2[Result Aggregation]
+            O3[Report Generation]
+        end
+        
+        subgraph Parser[Parser Layer]
+            P1[Line-by-line Parsing]
+            P2[Specification Type Detection]
+            P3[Token Extraction]
+        end
+        
+        subgraph Checkers[Checker Layer]
+            C1[Structure Checker<br/>- Specification order<br/>- Column positions<br/>- Line length]
+            C2[Syntax Checker<br/>- Line continuation<br/>- Multiple statements<br/>- FREE/END-FREE matching]
+            C3[Naming Checker<br/>- Variable naming<br/>- Procedure naming<br/>- Special characters]
+            C4[Best Practice Checker<br/>- Deprecated features<br/>- Indicator usage<br/>- FREE format recommendation]
+            C5[Common Errors Checker<br/>- F-spec space issues<br/>- D-spec column errors<br/>- Continuation errors]
+        end
+        
+        subgraph Rules[Rules Engine]
+            R1[Rule Definitions]
+            R2[Rule Evaluation Logic]
+        end
+    end
+    
+    Client -->|MCP Protocol| Tools
+    Tools --> Orchestration
+    Orchestration --> Parser
+    Parser --> Checkers
+    Checkers --> Rules
+    Rules --> Checkers
+    Checkers --> Parser
+    Parser --> Orchestration
+    Orchestration --> Tools
+    Tools -->|Results| Client
+    
+    style Client fill:#e1f5ff
+    style Server fill:#fff4e1
+    style Tools fill:#e8f5e9
+    style Orchestration fill:#f3e5f5
+    style Parser fill:#fff9c4
+    style Checkers fill:#ffebee
+    style Rules fill:#e0f2f1
 ```
 
 ## 2. Data Structures
