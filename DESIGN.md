@@ -55,13 +55,13 @@ graph TB
     Orchestration --> Tools
     Tools -->|Results| Client
     
-    style Client fill:#e1f5ff
-    style Server fill:#fff4e1
-    style Tools fill:#e8f5e9
-    style Orchestration fill:#f3e5f5
-    style Parser fill:#fff9c4
-    style Checkers fill:#ffebee
-    style Rules fill:#e0f2f1
+    style Client fill:#b3d9ff,stroke:#0066cc,stroke-width:2px,color:#000
+    style Server fill:#ffe6b3,stroke:#cc8800,stroke-width:2px,color:#000
+    style Tools fill:#c2e0c6,stroke:#2d7a3e,stroke-width:2px,color:#000
+    style Orchestration fill:#e6ccff,stroke:#7a2d9e,stroke-width:2px,color:#000
+    style Parser fill:#fff4b3,stroke:#ccaa00,stroke-width:2px,color:#000
+    style Checkers fill:#ffcccc,stroke:#cc3333,stroke-width:2px,color:#000
+    style Rules fill:#b3e6e6,stroke:#008080,stroke-width:2px,color:#000
 ```
 
 ## 2. Data Structures
