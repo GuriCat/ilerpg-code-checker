@@ -425,7 +425,7 @@ MIT
 
 ## 作成者
 
-IBM Bob
+guricat
 
 ## バージョン
 

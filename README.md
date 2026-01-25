@@ -425,7 +425,7 @@ MIT
 
 ## Author
 
-IBM Bob
+guricat
 
 ## Version
 
