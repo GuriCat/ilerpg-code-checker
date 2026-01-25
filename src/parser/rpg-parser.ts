@@ -121,10 +121,22 @@ export class RPGParser {
   private isContinuationLine(line: string, specType: SpecificationType): boolean {
     if (line.length < 7) return false;
     
-    // 桁固定形式の継続行判定（7桁目が'-'または'+'）
+    // 桁固定形式の継続行判定
     if (specType !== 'FREE' && specType !== 'UNKNOWN') {
       const col7 = line[6];
-      return col7 === '-' || col7 === '+';
+      
+      // 7桁目が'-'または'+'の場合は継続行
+      if (col7 === '-' || col7 === '+') {
+        return true;
+      }
+      
+      // F仕様書の場合、ファイル名フィールド（7-16桁）が空白なら継続行
+      if (specType === 'F' && line.length >= 16) {
+        const fileName = line.substring(6, 16).trim();
+        if (fileName.length === 0) {
+          return true;
+        }
+      }
     }
     
     return false;

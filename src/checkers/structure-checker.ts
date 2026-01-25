@@ -189,8 +189,8 @@ export class StructureChecker implements Checker {
       });
     }
 
-    // ファイル名（7-16桁）のチェック
-    if (line.rawContent.length >= 16) {
+    // ファイル名（7-16桁）のチェック（継続行は除外）
+    if (line.rawContent.length >= 16 && !line.isContinuation) {
       const fileName = line.rawContent.substring(6, 16).trim();
       if (fileName.length === 0 && checkLevel !== 'basic') {
         issues.push({
