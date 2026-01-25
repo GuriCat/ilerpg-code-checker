@@ -80,7 +80,7 @@ Users can define custom best practice rules in a JSON file. Rules support:
 1. Install dependencies:
 
 ```bash
-cd e:\ilerpg-code-checker
+cd /path/to/ilerpg-code-checker
 npm install
 ```
 

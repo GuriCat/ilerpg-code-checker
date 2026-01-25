@@ -80,7 +80,7 @@ ILE-RPGコードの文法とコーディング標準に準拠しているかを�
 1. 依存関係のインストール：
 
 ```bash
-cd e:\ilerpg-code-checker
+cd /path/to/ilerpg-code-checker
 npm install
 ```
 
