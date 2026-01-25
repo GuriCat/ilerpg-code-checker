@@ -73,13 +73,13 @@ export class RPGParser {
    * @returns 仕様書タイプ
    */
   private detectSpecificationType(line: string): SpecificationType {
-    // 空行または短すぎる行
-    if (line.length < 6) return 'UNKNOWN';
-    
     const trimmed = line.trim();
     
-    // **FREE形式のチェック（完全自由形式）
+    // **FREE形式のチェック（完全自由形式）- 最優先でチェック
     if (trimmed.startsWith('**FREE')) return 'FREE';
+    
+    // 空行または短すぎる行
+    if (line.length < 6) return 'UNKNOWN';
     
     // 6桁目（インデックス5）で仕様書タイプを判定
     const col6 = line[5];
