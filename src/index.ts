@@ -23,12 +23,13 @@ import { CheckLevel, Language, CheckOptions } from './types/index.js';
 class RPGStandardsCheckerServer {
   private server: Server;
   private fileReader: FileReader;
+  private readonly version = '0.0.2';
 
   constructor() {
     this.server = new Server(
       {
         name: 'ilerpg-code-checker',
-        version: '0.0.2'
+        version: this.version
       },
       {
         capabilities: {
@@ -473,7 +474,7 @@ class RPGStandardsCheckerServer {
   async run(): Promise<void> {
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    console.error('RPG Standards Checker MCP Server running on stdio');
+    console.error(`ILE RPG Code Checker MCP Server v${this.version} running on stdio`);
   }
 }
 
