@@ -262,7 +262,7 @@ use_mcp_tool({
   server_name: "ilerpg-code-checker",
   tool_name: "check_rpg_file",
   arguments: {
-    filePath: "//172.16.0.114/home/GURICAT/Bob_TestCase/RPGI2.rpg",
+    filePath: "//your-server/path/to/your-file.rpg",
     checkLevel: "standard",
     language: "en",          // "en" | "ja"
     considerDBCS: false,     // true to consider DBCS shift characters
@@ -351,7 +351,7 @@ C     Label        TAG
 When `considerDBCS: true`:
 
 ```rpg
-D 日本語変数      S             10A
+D MyVar           S             10A   INZ('日本語')
   ↑ Correctly accounts for shift characters in column position check
 ```
 
@@ -429,9 +429,16 @@ IBM Bob
 
 ## Version
 
-0.0.1
+0.0.2
 
 ## Changelog
+
+### 0.0.2 (2026-01-25)
+- Updated documentation
+- Changed title from "ILE-RPG Coding Standards Checker" to "ILE-RPG Code Checker"
+- Updated description to include "syntax and coding standards"
+- Masked sensitive information in examples
+- Fixed DBCS example to use INZ instead of Japanese variable names
 
 ### 0.0.1 (2026-01-25)
 - Initial release

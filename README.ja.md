@@ -262,7 +262,7 @@ use_mcp_tool({
   server_name: "ilerpg-code-checker",
   tool_name: "check_rpg_file",
   arguments: {
-    filePath: "//172.16.0.114/home/GURICAT/Bob_TestCase/RPGI2.rpg",
+    filePath: "//your-server/path/to/your-file.rpg",
     checkLevel: "standard",
     language: "ja",          // "en" | "ja"
     considerDBCS: false,     // DBCS シフト文字を考慮する場合は true
@@ -351,7 +351,7 @@ C     Label        TAG
 `considerDBCS: true` の場合：
 
 ```rpg
-D 日本語変数      S             10A
+D MyVar           S             10A   INZ('日本語')
   ↑ 桁位置チェックでシフト文字を正しく考慮します
 ```
 
@@ -429,9 +429,16 @@ IBM Bob
 
 ## バージョン
 
-0.0.1
+0.0.2
 
 ## 更新履歴
+
+### 0.0.2 (2026-01-25)
+- ドキュメントの更新
+- タイトルを「ILE-RPG コーディング・チェッカー」から「ILE-RPG コード・チェッカー」に変更
+- 説明文を「文法とコーディング標準」に更新
+- 例示のセンシティブ情報をマスク
+- DBCS の例を日本語変数名から INZ を使用する形式に修正
 
 ### 0.0.1 (2026-01-25)
 - 初版リリース
