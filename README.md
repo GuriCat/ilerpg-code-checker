@@ -1,6 +1,6 @@
-# ILE-RPG Coding Standards Checker
+# ILE-RPG Code Checker
 
-An MCP server that checks compliance with ILE-RPG coding standards.
+An MCP server that checks compliance with ILE-RPG syntax and coding standards.
 
 ## Overview
 
