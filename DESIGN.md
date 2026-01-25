@@ -62,6 +62,35 @@ graph TB
     style Parser fill:#fff4b3,stroke:#ccaa00,stroke-width:2px,color:#000
     style Checkers fill:#ffcccc,stroke:#cc3333,stroke-width:2px,color:#000
     style Rules fill:#b3e6e6,stroke:#008080,stroke-width:2px,color:#000
+    
+    %% Tool boxes
+    style T1 fill:#d4f1d4,stroke:#2d7a3e,stroke-width:1px,color:#000
+    style T2 fill:#d4f1d4,stroke:#2d7a3e,stroke-width:1px,color:#000
+    style T3 fill:#d4f1d4,stroke:#2d7a3e,stroke-width:1px,color:#000
+    style T4 fill:#d4f1d4,stroke:#2d7a3e,stroke-width:1px,color:#000
+    style T5 fill:#d4f1d4,stroke:#2d7a3e,stroke-width:1px,color:#000
+    style T6 fill:#d4f1d4,stroke:#2d7a3e,stroke-width:1px,color:#000
+    
+    %% Orchestration boxes
+    style O1 fill:#f0e0ff,stroke:#7a2d9e,stroke-width:1px,color:#000
+    style O2 fill:#f0e0ff,stroke:#7a2d9e,stroke-width:1px,color:#000
+    style O3 fill:#f0e0ff,stroke:#7a2d9e,stroke-width:1px,color:#000
+    
+    %% Parser boxes
+    style P1 fill:#fff8cc,stroke:#ccaa00,stroke-width:1px,color:#000
+    style P2 fill:#fff8cc,stroke:#ccaa00,stroke-width:1px,color:#000
+    style P3 fill:#fff8cc,stroke:#ccaa00,stroke-width:1px,color:#000
+    
+    %% Checker boxes
+    style C1 fill:#ffe0e0,stroke:#cc3333,stroke-width:1px,color:#000
+    style C2 fill:#ffe0e0,stroke:#cc3333,stroke-width:1px,color:#000
+    style C3 fill:#ffe0e0,stroke:#cc3333,stroke-width:1px,color:#000
+    style C4 fill:#ffe0e0,stroke:#cc3333,stroke-width:1px,color:#000
+    style C5 fill:#ffe0e0,stroke:#cc3333,stroke-width:1px,color:#000
+    
+    %% Rules boxes
+    style R1 fill:#ccf2f2,stroke:#008080,stroke-width:1px,color:#000
+    style R2 fill:#ccf2f2,stroke:#008080,stroke-width:1px,color:#000
 ```
 
 ## 2. Data Structures
