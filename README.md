@@ -146,9 +146,11 @@ Add to your Cline MCP settings in VS Code:
 
 ### MCP Tools
 
+**Note on Token Efficiency:** When checking files, prefer using `check_rpg_file` over `check_rpg_code`. The `check_rpg_file` tool reads files directly on the server side, significantly reducing token usage compared to passing entire code content through `check_rpg_code`. This is especially important for large files or when checking multiple files.
+
 #### 1. check_rpg_code
 
-Checks entire RPG source code.
+Checks entire RPG source code. **Note:** For better token efficiency, consider using `check_rpg_file` when checking files.
 
 ```typescript
 use_mcp_tool({
@@ -253,7 +255,7 @@ use_mcp_tool({
 
 #### 6. check_rpg_file
 
-Checks file by file.
+Checks file by file. **Recommended:** This tool is more efficient than `check_rpg_code` as it reduces token usage by reading files directly on the server side.
 
 ```typescript
 use_mcp_tool({
