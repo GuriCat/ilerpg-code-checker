@@ -1,0 +1,32 @@
+{
+  "name": "ilerpg-code-checker",
+  "version": "1.0.0",
+  "description": "ILE-RPG Code Checker - MCP Server",
+  "type": "module",
+  "main": "build/index.js",
+  "bin": {
+    "ilerpg-code-checker": "build/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "rpg",
+    "ile-rpg",
+    "coding-standards",
+    "linter",
+    "mcp",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^25.0.10",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.25.3"
+  }
+}

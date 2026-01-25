@@ -1,0 +1,94 @@
+{
+  "rules": [
+    {
+      "id": "no-select-all",
+      "name": "Avoid SELECT *",
+      "description": "Using SELECT * in SQL statements is not recommended as it can lead to performance issues and makes code harder to maintain.",
+      "pattern": "SELECT\\s+\\*",
+      "severity": "warning",
+      "suggestion": "Specify column names explicitly instead of using SELECT *",
+      "enabled": true
+    },
+    {
+      "id": "require-error-handling",
+      "name": "Error handling required",
+      "description": "All file operations should have proper error handling to ensure robust code.",
+      "pattern": "\\b(CHAIN|READ|WRITE|UPDATE|DELETE)\\b",
+      "severity": "info",
+      "suggestion": "Add error handling using %ERROR() or indicator (e.g., *IN99)",
+      "enabled": true
+    },
+    {
+      "id": "no-hardcoded-values",
+      "name": "Avoid hardcoded values",
+      "description": "Hardcoded values should be replaced with named constants for better maintainability.",
+      "pattern": "\\b(EVAL|IF|DOU|DOW)\\s+.*\\s*=\\s*['\"]\\w+['\"]",
+      "severity": "info",
+      "suggestion": "Define a named constant instead of using hardcoded values",
+      "enabled": false
+    },
+    {
+      "id": "prefer-qualified-names",
+      "name": "Use qualified data structure names",
+      "description": "Using qualified data structure names improves code readability and prevents naming conflicts.",
+      "pattern": "\\bDS\\b(?!.*QUALIFIED)",
+      "severity": "info",
+      "suggestion": "Add QUALIFIED keyword to data structure definitions",
+      "enabled": false
+    },
+    {
+      "id": "no-magic-numbers",
+      "name": "Avoid magic numbers",
+      "description": "Magic numbers (unnamed numeric literals) make code harder to understand and maintain.",
+      "pattern": "\\b(EVAL|IF|DOU|DOW)\\s+.*\\s*[=<>]+\\s*\\d{2,}\\b",
+      "severity": "warning",
+      "suggestion": "Replace magic numbers with named constants",
+      "enabled": true
+    },
+    {
+      "id": "require-procedure-documentation",
+      "name": "Procedure documentation required",
+      "description": "All procedures should have documentation comments explaining their purpose and parameters.",
+      "pattern": "\\bDCL-PROC\\b(?!.*//)",
+      "severity": "info",
+      "suggestion": "Add documentation comments before procedure declaration",
+      "enabled": false
+    },
+    {
+      "id": "no-obsolete-opcodes",
+      "name": "Avoid obsolete operation codes",
+      "description": "Some operation codes are obsolete and should be replaced with modern alternatives.",
+      "pattern": "\\b(MOVE|MOVEL|MOVEA|XFOOT|Z-ADD|Z-SUB)\\b",
+      "severity": "warning",
+      "suggestion": "Use EVAL or modern built-in functions instead",
+      "enabled": true
+    },
+    {
+      "id": "prefer-bifs",
+      "name": "Use built-in functions",
+      "description": "Built-in functions (BIFs) are more efficient and readable than traditional operation codes.",
+      "pattern": "\\b(SUBST|SCAN|XLATE)\\b",
+      "severity": "info",
+      "suggestion": "Consider using %SUBST(), %SCAN(), %XLATE() built-in functions",
+      "enabled": false
+    },
+    {
+      "id": "no-open-access",
+      "name": "Avoid open access files",
+      "description": "Files should be explicitly opened and closed for better resource management.",
+      "pattern": "\\bF\\s+\\w+\\s+.*\\s+USROPN\\s*$",
+      "severity": "info",
+      "suggestion": "Use OPEN and CLOSE operations explicitly",
+      "enabled": false
+    },
+    {
+      "id": "require-const-for-literals",
+      "name": "Use constants for literal values",
+      "description": "Frequently used literal values should be defined as constants.",
+      "pattern": "['\"]\\w{5,}['\"]",
+      "severity": "info",
+      "suggestion": "Define a constant for this literal value",
+      "enabled": false
+    }
+  ]
+}
