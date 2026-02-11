@@ -18,8 +18,9 @@ This MCP server analyzes ILE-RPG source code and detects issues such as:
 ### Check Functions
 
 1. **Structure Check**
-   - Specification order (H→F→D→P→I→C→O)
-   - Column position rules for each specification
+   - Specification order (H→F→D→P→I→C→O) with P-procedure section awareness
+   - Column position rules for each specification (H/F/D/P/C)
+   - D-spec advanced validation (name continuation `...`, declaration type placement, trailing period detection)
    - Line length limit (maximum 100 columns)
    - DBCS (Double-Byte Character Set) support with shift character consideration
 
@@ -28,21 +29,23 @@ This MCP server analyzes ILE-RPG source code and detects issues such as:
    - Prohibition of multiple statements on one line
    - /FREE and /END-FREE correspondence
    - Correct use of **FREE format
+   - Parentheses and string literal matching
 
 3. **Naming Convention Check**
    - Variable and procedure name conventions
    - Special character usage restrictions
    - Meaningful name recommendations
+   - Reserved word checking (strict level)
 
 4. **Best Practice Check**
-   - Detection of deprecated features (GOTO, TAG, etc.)
-   - Warning for numbered indicators
+   - Detection of 16 deprecated features (GOTO, TAG, MOVE, MOVEL, Z-ADD, Z-SUB, etc.)
+   - Warning for numbered indicators (*IN01-*IN99)
    - Recommendation for fully free format
    - Custom rule support
 
 5. **Common Error Detection**
    - F-spec space shortage
-   - D-spec column position errors
+   - D-spec column position errors (including column shift heuristics)
    - Continuation line errors
 
 ### Check Levels
@@ -360,37 +363,36 @@ D MyVar           S             10A   INZ('日本語')
 ### Project Structure
 
 ```
-e:\ilerpg-code-checker\
+ilerpg-code-checker/
 ├── package.json
 ├── tsconfig.json
-├── README.md
-├── README.ja.md
-├── PROJECT_STATUS.md
-├── IMPLEMENTATION_DESIGN.md
-├── CURRENT_STATUS_SUMMARY.md
-├── src\
+├── README.md                 # Documentation (English)
+├── README.ja.md              # Documentation (Japanese)
+├── DESIGN.md                 # Architecture & design document
+├── custom-rules.example.json # Custom rules example
+├── src/
 │   ├── index.ts              # MCP server entry point
 │   ├── orchestrator.ts       # Check orchestration
-│   ├── parser\
+│   ├── parser/
 │   │   ├── rpg-parser.ts     # RPG code parser
 │   │   └── line-analyzer.ts  # Line analysis
-│   ├── checkers\
-│   │   ├── structure-checker.ts
-│   │   ├── syntax-checker.ts
-│   │   ├── naming-checker.ts
-│   │   ├── best-practice-checker.ts
-│   │   └── common-errors-checker.ts
-│   ├── i18n\
-│   │   └── messages.ts       # Multi-language messages
-│   ├── config\
+│   ├── checkers/
+│   │   ├── structure-checker.ts     # Spec order & column validation
+│   │   ├── syntax-checker.ts        # Syntax & format validation
+│   │   ├── naming-checker.ts        # Naming convention validation
+│   │   ├── best-practice-checker.ts # Deprecated features & best practices
+│   │   └── common-errors-checker.ts # Common error patterns
+│   ├── i18n/
+│   │   └── messages.ts       # Multi-language messages (en/ja)
+│   ├── config/
 │   │   └── custom-rules.ts   # Custom rules manager
-│   ├── types\
+│   ├── types/
 │   │   └── index.ts          # Type definitions
-│   └── utils\
-│       ├── file-reader.ts
-│       ├── reporter.ts
+│   └── utils/
+│       ├── file-reader.ts    # File I/O operations
+│       ├── reporter.ts       # Report formatting
 │       └── dbcs-helper.ts    # DBCS support utilities
-└── build\
+└── build/                    # Compiled output
 ```
 
 ### Build
@@ -429,9 +431,37 @@ guricat
 
 ## Version
 
-0.0.4
+0.0.7
 
 ## Changelog
+
+### 0.0.7 (2026-02-12)
+- Fixed false positives for WCA4i test cases
+- Improved parser robustness for continuation lines
+- Fixed SPEC_ORDER false positives inside P-procedure sections
+
+### 0.0.6 (2026-02-12)
+- Added Phase 9 compile findings for D-spec validation
+- Name continuation syntax (`...`) handling
+- Declaration type misplacement detection (col 22-23 vs col 24-25)
+- Trailing period detection in field names (RNF0622/RNF0623)
+- Column shift heuristics for keyword detection in size field
+
+### 0.0.5 (2026-02-12)
+- Enhanced D-spec column position validation
+- More robust column position checking across specifications
+- Improved error messages and suggestions
+
+### 0.0.4 (2026-01-25)
+- Fully free-format (**FREE) detection
+- Token efficiency improvements in tool descriptions
+- Fixed **FREE detection before line length validation
+
+### 0.0.3 (2026-01-25)
+- Added fully free-format detection support
+- Tool description improvements for token efficiency
+- Renamed to "ILE RPG Code Checker"
+- Added version number to startup message
 
 ### 0.0.2 (2026-01-25)
 - Updated documentation

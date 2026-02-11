@@ -18,8 +18,9 @@ ILE-RPGコードの文法とコーディング標準に準拠しているかを�
 ### チェック機能
 
 1. **構造チェック**
-   - 仕様書の順序（H→F→D→P→I→C→O）
-   - 各仕様書の桁位置ルール
+   - 仕様書の順序（H→F→D→P→I→C→O）、Pプロシージャセクション対応
+   - 各仕様書の桁位置ルール（H/F/D/P/C）
+   - D仕様書の高度な検証（名前継続`...`、宣言タイプ配置、末尾ピリオド検出）
    - 行の長さ制限（最大100桁）
    - DBCS（2バイト文字セット）サポート（シフト文字考慮）
 
@@ -28,21 +29,23 @@ ILE-RPGコードの文法とコーディング標準に準拠しているかを�
    - 複数命令の1行記述禁止
    - /FREE と /END-FREE の対応
    - **FREE形式の正しい使用
+   - 括弧・文字列リテラルの整合性チェック
 
 3. **命名規約チェック**
    - 変数名、プロシージャ名の規約
    - 特殊文字の使用制限
    - 意味のある名前の推奨
+   - 予約語チェック（strictレベル）
 
 4. **ベストプラクティスチェック**
-   - 非推奨機能の使用検出（GOTO、TAG等）
-   - 数字付き標識の使用警告
+   - 16種の非推奨機能の検出（GOTO、TAG、MOVE、MOVEL、Z-ADD、Z-SUB等）
+   - 数字付き標識（*IN01-*IN99）の使用警告
    - 完全自由形式の推奨
    - カスタムルールサポート
 
 5. **よくあるエラー検出**
    - F仕様書のスペース不足
-   - D仕様書の桁位置エラー
+   - D仕様書の桁位置エラー（カラムシフト・ヒューリスティクス含む）
    - 継続行の誤り
 
 ### チェックレベル
@@ -360,37 +363,36 @@ D MyVar           S             10A   INZ('日本語')
 ### プロジェクト構造
 
 ```
-e:\ilerpg-code-checker\
+ilerpg-code-checker/
 ├── package.json
 ├── tsconfig.json
-├── README.md
-├── README.ja.md
-├── PROJECT_STATUS.md
-├── IMPLEMENTATION_DESIGN.md
-├── CURRENT_STATUS_SUMMARY.md
-├── src\
+├── README.md                 # ドキュメント（英語）
+├── README.ja.md              # ドキュメント（日本語）
+├── DESIGN.md                 # アーキテクチャ・設計ドキュメント
+├── custom-rules.example.json # カスタムルールの例
+├── src/
 │   ├── index.ts              # MCP サーバーエントリーポイント
 │   ├── orchestrator.ts       # チェックオーケストレーション
-│   ├── parser\
+│   ├── parser/
 │   │   ├── rpg-parser.ts     # RPG コードパーサー
 │   │   └── line-analyzer.ts  # 行解析
-│   ├── checkers\
-│   │   ├── structure-checker.ts
-│   │   ├── syntax-checker.ts
-│   │   ├── naming-checker.ts
-│   │   ├── best-practice-checker.ts
-│   │   └── common-errors-checker.ts
-│   ├── i18n\
-│   │   └── messages.ts       # 多言語メッセージ
-│   ├── config\
+│   ├── checkers/
+│   │   ├── structure-checker.ts     # 仕様書順序・桁位置検証
+│   │   ├── syntax-checker.ts        # 文法・書式検証
+│   │   ├── naming-checker.ts        # 命名規約検証
+│   │   ├── best-practice-checker.ts # 非推奨機能・ベストプラクティス
+│   │   └── common-errors-checker.ts # よくあるエラーパターン
+│   ├── i18n/
+│   │   └── messages.ts       # 多言語メッセージ（en/ja）
+│   ├── config/
 │   │   └── custom-rules.ts   # カスタムルールマネージャー
-│   ├── types\
+│   ├── types/
 │   │   └── index.ts          # 型定義
-│   └── utils\
-│       ├── file-reader.ts
-│       ├── reporter.ts
+│   └── utils/
+│       ├── file-reader.ts    # ファイルI/O操作
+│       ├── reporter.ts       # レポートフォーマット
 │       └── dbcs-helper.ts    # DBCS サポートユーティリティ
-└── build\
+└── build/                    # コンパイル出力
 ```
 
 ### ビルド
@@ -429,9 +431,37 @@ guricat
 
 ## バージョン
 
-0.0.4
+0.0.7
 
 ## 更新履歴
+
+### 0.0.7 (2026-02-12)
+- WCA4iテストケースの偽陽性（false positive）を修正
+- パーサーの継続行処理のロバスト性を改善
+- Pプロシージャセクション内のSPEC_ORDER偽陽性を修正
+
+### 0.0.6 (2026-02-12)
+- D仕様書のPhase 9コンパイル検出項目を追加
+- 名前継続構文（`...`）の処理
+- 宣言タイプの誤配置検出（桁22-23 vs 正しい桁24-25）
+- フィールド名末尾のピリオド検出（RNF0622/RNF0623）
+- サイズフィールドへのキーワード混入を検出するカラムシフト・ヒューリスティクス
+
+### 0.0.5 (2026-02-12)
+- D仕様書の桁位置検証を強化
+- 各仕様書のより堅牢な桁位置チェック
+- エラーメッセージと提案の改善
+
+### 0.0.4 (2026-01-25)
+- 完全自由形式（**FREE）の検出
+- ツール説明文のトークン効率改善
+- 行長チェック前の**FREE検出を修正
+
+### 0.0.3 (2026-01-25)
+- 完全自由形式の検出サポートを追加
+- ツール説明文のトークン効率改善
+- 「ILE RPG Code Checker」に名称変更
+- 起動メッセージにバージョン番号を追加
 
 ### 0.0.2 (2026-01-25)
 - ドキュメントの更新

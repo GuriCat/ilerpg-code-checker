@@ -502,6 +502,6 @@ Allows users to define custom best practice rules via JSON configuration:
 
 ---
 
-**Version:** 0.0.1  
-**Last Updated:** 2026-01-25  
+**Version:** 0.0.7
+**Last Updated:** 2026-02-12
 **Status:** Implementation Complete
