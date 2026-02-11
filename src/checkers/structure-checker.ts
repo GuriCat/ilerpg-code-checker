@@ -45,6 +45,11 @@ export class StructureChecker implements Checker {
   /**
    * 仕様書の順序をチェック
    * H→F→D→P→I→C→O の順序で記述されているかを確認
+   *
+   * 重要な例外: RPG IVではP仕様書のB-Eブロック内にD仕様書でローカル変数・
+   * プロシージャI/F・プロトタイプを定義できる。これは正常なパターンであり、
+   * SPEC_ORDERエラーとして報告しない。
+   *
    * @param lines パース済み行の配列
    * @returns 検出された問題の配列
    */
@@ -52,16 +57,36 @@ export class StructureChecker implements Checker {
     const issues: Issue[] = [];
     const expectedOrder = ['H', 'F', 'D', 'P', 'I', 'C', 'O'];
     let lastSpecIndex = -1;
+    let inProcedure = false; // P...B/P...Eブロック内かどうか
 
     for (const line of lines) {
       // コメント行、UNKNOWN、FREE形式はスキップ
-      if (line.isComment || line.specificationType === 'UNKNOWN' || 
+      if (line.isComment || line.specificationType === 'UNKNOWN' ||
           line.specificationType === 'FREE' || line.specificationType === 'COMMENT') {
         continue;
       }
 
+      // P仕様書のB/E追跡（名前継続行は除外）
+      if (line.specificationType === 'P' && line.rawContent.length >= 24) {
+        const pTrimmedEnd = line.rawContent.trimEnd();
+        if (!pTrimmedEnd.endsWith('...')) {
+          const beginEnd = line.rawContent[23].toUpperCase();
+          if (beginEnd === 'B') {
+            inProcedure = true;
+          } else if (beginEnd === 'E') {
+            inProcedure = false;
+          }
+        }
+      }
+
       const currentSpecIndex = expectedOrder.indexOf(line.specificationType);
       if (currentSpecIndex === -1) continue;
+
+      // P...B/P...Eブロック内のD仕様書・C仕様書は順序チェック対象外
+      // （ローカル変数定義やプロシージャI/Fは正常）
+      if (inProcedure && (line.specificationType === 'D' || line.specificationType === 'C')) {
+        continue;
+      }
 
       // 順序が逆転している場合
       if (currentSpecIndex < lastSpecIndex) {
@@ -72,7 +97,7 @@ export class StructureChecker implements Checker {
           column: 6,
           message: `仕様書の順序が不正です。${line.specificationType}仕様書は${expectedOrder[lastSpecIndex]}仕様書の後に配置できません。`,
           rule: 'SPEC_ORDER',
-          ruleDescription: '仕様書は H→F→D→P→I→C→O の順序で記述する必要があります。',
+          ruleDescription: '仕様書は H→F→D→P→I→C→O の順序で記述する必要があります（P...B/P...E内のD/C仕様書はローカル定義として許容）。',
           suggestion: `${line.specificationType}仕様書を適切な位置に移動してください。`,
           codeSnippet: line.rawContent
         });
@@ -294,6 +319,17 @@ export class StructureChecker implements Checker {
 
     // コメント行・継続行はこれ以上のチェックをスキップ
     if (line.isComment || line.isContinuation) {
+      return issues;
+    }
+
+    // 名前継続行（...で終わる行）は桁位置チェックをスキップ
+    // RPGでは15文字を超える名前を `D longName...` と書き、
+    // `...`が通常の桁位置フィールド（col22-25等）に重なることがある。
+    // この行は名前フィールドの拡張であり、通常の桁位置ルールは適用されない。
+    const trimmedEnd = line.rawContent.trimEnd();
+    if (trimmedEnd.endsWith('...')) {
+      // 名前継続行固有のチェックのみ実行
+      issues.push(...this.checkDSpecNameContinuation(line));
       return issues;
     }
 
@@ -804,6 +840,12 @@ export class StructureChecker implements Checker {
         rule: 'P_SPEC_COL6',
         codeSnippet: line.rawContent
       });
+    }
+
+    // 名前継続行（...で終わる行）は桁位置チェックをスキップ
+    const trimmedEnd = line.rawContent.trimEnd();
+    if (trimmedEnd.endsWith('...')) {
+      return issues;
     }
 
     // 24桁目がBまたはEであることを確認（standardレベル以上）

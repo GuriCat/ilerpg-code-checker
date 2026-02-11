@@ -115,6 +115,10 @@ export class CommonErrorsChecker implements Checker {
     for (const line of lines) {
       if (line.specificationType !== 'D' || line.isComment || line.isContinuation) continue;
 
+      // 名前継続行（...で終わる行）はスキップ — 桁位置ルールが通常と異なる
+      const trimmedEnd = line.rawContent.trimEnd();
+      if (trimmedEnd.endsWith('...')) continue;
+
       // If name field (columns 7-21) is empty but other fields have values
       const name = line.rawContent.substring(6, Math.min(21, line.rawContent.length)).trim();
       const hasOtherData = line.rawContent.length > 21 && line.rawContent.substring(21).trim().length > 0;
