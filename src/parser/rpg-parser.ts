@@ -232,20 +232,33 @@ export class RPGParser {
   
   /**
    * D仕様書の桁データを抽出
+   *
+   * RPG IV固定形式D仕様書の桁位置 (1始まり → 0始まりインデックス):
+   *   桁6(idx5):     仕様書種別 'D'
+   *   桁7-21(idx6-20):  名前フィールド (15桁)
+   *   桁22(idx21):   外部記述 (E/空白)
+   *   桁23(idx22):   データ構造タイプ
+   *   桁24-25(idx23-24): 宣言型 (PR/PI/DS/S/C/空白)
+   *   桁26-32(idx25-31): From/To位置 (7桁)
+   *   桁33-39(idx32-38): 内部長 (7桁、右詰め)
+   *   桁40(idx39):   データ型
+   *   桁41-42(idx40-41): 小数桁 (右詰め)
+   *   桁43-80(idx42-79): キーワード
+   *
    * @param line 行の内容
    * @returns D仕様書の桁データ
    */
   private extractDSpecData(line: string): DSpecColumnData {
     return {
-      name: this.extractColumn(line, 6, 21),                  // 7-21桁
-      externalDescription: this.extractColumn(line, 21, 22),  // 22桁
-      dataStructureType: this.extractColumn(line, 22, 23),    // 23桁
-      definitionType: this.extractColumn(line, 23, 24),       // 24桁
-      fromPosition: this.extractColumn(line, 25, 32),         // 26-32桁
-      toPosition: this.extractColumn(line, 32, 39),           // 33-39桁
-      dataType: this.extractColumn(line, 39, 40),             // 40桁
-      decimalPositions: this.extractColumn(line, 40, 42),     // 41-42桁
-      keywords: this.extractColumn(line, 43, 80)              // 44-80桁
+      name: this.extractColumn(line, 6, 21),                  // 7-21桁: 名前 (15桁)
+      externalDescription: this.extractColumn(line, 21, 22),  // 22桁: 外部記述
+      dataStructureType: this.extractColumn(line, 22, 23),    // 23桁: DS型
+      declarationType: this.extractColumn(line, 23, 25),      // 24-25桁: 宣言型 (2桁)
+      fromPosition: this.extractColumn(line, 25, 32),         // 26-32桁: 開始位置
+      toLength: this.extractColumn(line, 32, 39),             // 33-39桁: 内部長
+      dataType: this.extractColumn(line, 39, 40),             // 40桁: データ型
+      decimalPositions: this.extractColumn(line, 40, 42),     // 41-42桁: 小数桁
+      keywords: this.extractColumn(line, 42, 80)              // 43-80桁: キーワード
     };
   }
   

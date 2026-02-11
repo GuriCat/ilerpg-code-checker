@@ -163,17 +163,32 @@ export interface FSpecColumnData extends ColumnData {
 
 /**
  * D仕様書の桁データ
+ *
+ * RPG IV固定形式D仕様書の桁位置ルール:
+ *   桁6:     仕様書種別 'D'
+ *   桁7-21:  名前フィールド (15桁)
+ *            - 宣言名(DS/PR/PI等): 桁7開始
+ *            - サブフィールド: 桁8開始(1スペース後)
+ *            - 無名行(継続行等): 全て空白
+ *   桁22:    外部記述 (E/空白)
+ *   桁23:    データ構造タイプ
+ *   桁24-25: 宣言型 (PR/PI/DS/S/C/空白)
+ *   桁26-32: From/To位置 (7桁)
+ *   桁33-39: 内部長 (7桁、右詰め)
+ *   桁40:    データ型 (A/B/C/D/F/G/I/N/O/P/S/T/U/Z/*)
+ *   桁41-42: 小数桁 (右詰め)
+ *   桁43-80: キーワード
  */
 export interface DSpecColumnData extends ColumnData {
-  name?: string;         // 7-21桁: 名前
-  externalDescription?: string; // 22桁: 外部記述
-  dataStructureType?: string;   // 23桁: データ構造タイプ
-  definitionType?: string;      // 24桁: 定義タイプ
-  fromPosition?: string;        // 26-32桁: 開始位置
-  toPosition?: string;          // 33-39桁: 終了位置
-  dataType?: string;            // 40桁: データ型
-  decimalPositions?: string;    // 41-42桁: 小数点以下桁数
-  keywords?: string;            // 44-80桁: キーワード
+  name?: string;                    // 7-21桁: 名前 (15桁)
+  externalDescription?: string;     // 22桁: 外部記述 (E/空白)
+  dataStructureType?: string;       // 23桁: データ構造タイプ
+  declarationType?: string;         // 24-25桁: 宣言型 (PR/PI/DS/S/C/空白)
+  fromPosition?: string;            // 26-32桁: 開始位置 (7桁)
+  toLength?: string;                // 33-39桁: 内部長/終了位置 (7桁、右詰め)
+  dataType?: string;                // 40桁: データ型
+  decimalPositions?: string;        // 41-42桁: 小数点以下桁数 (右詰め)
+  keywords?: string;                // 43-80桁: キーワード
 }
 
 /**
