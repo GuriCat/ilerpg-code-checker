@@ -20,21 +20,90 @@ import {
  */
 export class RPGParser {
   /**
+   * 完全自由形式（**FREE）ファイルかどうかを追跡
+   * **FREEが検出されると、それ以降の行は固定形式パースをスキップ
+   */
+  private isFullyFreeFile = false;
+
+  /**
    * RPGソースコードを行単位でパース
    * @param code RPGソースコード
    * @returns パース済み行情報の配列
    */
   parse(code: string): ParsedLine[] {
-    const lines = code.split('\n');
+    // 改行コードを統一（\r\nや\rを\nに変換してからsplit）
+    const normalizedCode = code.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    const lines = normalizedCode.split('\n');
     const parsedLines: ParsedLine[] = [];
-    
+
+    // 状態をリセット
+    this.isFullyFreeFile = false;
+
+    // **FREE/heuristic自由形式のプリスキャン
+    this.isFullyFreeFile = this.detectFullyFreeFormat(lines);
+
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       const parsedLine = this.parseLine(line, i + 1);
       parsedLines.push(parsedLine);
     }
-    
+
     return parsedLines;
+  }
+
+  /**
+   * 完全自由形式ファイルかどうかを判定
+   *
+   * 以下の条件で判定:
+   * 1. **FREE（大小文字不問）が先頭にある
+   * 2. **FREEがなくても、最初の有意行（非空白・非コメント）が
+   *    自由形式キーワード（ctl-opt, dcl-f, dcl-s, dcl-ds 等）で始まる場合
+   *    → 暗黙的に完全自由形式として扱う
+   *
+   * @param lines ソース行の配列
+   * @returns 完全自由形式の場合true
+   */
+  private detectFullyFreeFormat(lines: string[]): boolean {
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.length === 0) continue;
+
+      // **FREE（大小文字不問）
+      if (trimmed.toUpperCase().startsWith('**FREE')) return true;
+
+      // // コメント行（自由形式コメント）はスキップして次の行を確認
+      if (trimmed.startsWith('//')) continue;
+
+      // 最初の有意行が自由形式キーワードで始まるかチェック
+      const upper = trimmed.toUpperCase();
+      const freeFormKeywords = [
+        'CTL-OPT', 'DCL-F', 'DCL-S', 'DCL-DS', 'DCL-PR', 'DCL-PI',
+        'DCL-C', 'DCL-PROC', 'DCL-SUBF', 'DCL-PARM', 'DCL-ENUM',
+        'BEGSR', 'ENDSR', 'IF ', 'ELSE', 'ENDIF', 'DOW ', 'DOU ',
+        'FOR ', 'ENDFOR', 'ENDDO', 'SELECT', 'WHEN ', 'OTHER',
+        'ENDSL', 'EVAL ', 'CALLP ', 'RETURN', 'LEAVE', 'ITER',
+        'EXSR ', 'MONITOR', 'ON-ERROR', 'ENDMON', 'OPEN ', 'CLOSE ',
+        'READ ', 'READC ', 'READP ', 'READE ', 'READPE ', 'WRITE ',
+        'UPDATE ', 'DELETE ', 'CHAIN ', 'SETLL ', 'SETGT ',
+        'EXCEPT', 'EXFMT ', 'DUMP', 'RESET ', 'CLEAR ', 'SORTA ',
+        'DSPLY', '*INLR'
+      ];
+
+      if (freeFormKeywords.some(kw => upper.startsWith(kw))) {
+        return true;
+      }
+
+      // 最初の有意行が6桁目に仕様書識別子を持つ場合は固定形式
+      if (line.length >= 6) {
+        const col6 = line[5].toUpperCase();
+        if ('HFDPICO*'.includes(col6)) return false;
+      }
+
+      // 判定できない場合は固定形式として扱う
+      return false;
+    }
+
+    return false;
   }
   
   /**
@@ -69,24 +138,53 @@ export class RPGParser {
   
   /**
    * 仕様書タイプを検出
+   *
+   * **FREE（大小文字不問）が検出されると、それ以降の行は全てUNKNOWN
+   * （自由形式コード）として扱い、固定形式の桁位置チェックをスキップする。
+   *
    * @param line 行の内容
    * @returns 仕様書タイプ
    */
   private detectSpecificationType(line: string): SpecificationType {
     const trimmed = line.trim();
-    
-    // **FREE形式のチェック（完全自由形式）- 最優先でチェック
-    if (trimmed.startsWith('**FREE')) return 'FREE';
-    
+
+    // **FREE形式のチェック（完全自由形式）- 大小文字不問
+    if (trimmed.toUpperCase().startsWith('**FREE')) {
+      this.isFullyFreeFile = true;
+      return 'FREE';
+    }
+
+    // **FREEファイル内の行は全てUNKNOWN（自由形式）として扱う
+    // 固定形式の桁位置ルール（col6で仕様書タイプ判定）は適用しない
+    if (this.isFullyFreeFile) {
+      return 'UNKNOWN';
+    }
+
     // 空行または短すぎる行
     if (line.length < 6) return 'UNKNOWN';
-    
+
+    // コンパイラ指示命令のチェック（/COPY, /INCLUDE, /EJECT, /SPACE, /TITLE等）
+    // col7(idx6)が'/'で始まる行はコンパイラ指示命令として扱い、
+    // col6の仕様書タイプに関わらず桁位置チェックの対象外とする
+    // ※/FREEと/END-FREEはsyntax-checkerで対応チェックするためUNKNOWNにしない
+    if (line.length >= 7 && line[6] === '/') {
+      const directive = line.substring(6).trim().toUpperCase();
+      if (directive.startsWith('/COPY') || directive.startsWith('/INCLUDE') ||
+          directive.startsWith('/EJECT') || directive.startsWith('/SPACE') ||
+          directive.startsWith('/TITLE') || directive.startsWith('/IF') ||
+          directive.startsWith('/ELSE') || directive.startsWith('/ENDIF') ||
+          directive.startsWith('/DEFINE') || directive.startsWith('/UNDEFINE') ||
+          directive.startsWith('/EOF')) {
+        return 'UNKNOWN';
+      }
+    }
+
     // 6桁目（インデックス5）で仕様書タイプを判定
     const col6 = line[5];
-    
+
     // コメント行のチェック（6桁目が'*'）
     if (col6 === '*') return 'COMMENT';
-    
+
     // 各仕様書タイプのチェック
     switch (col6.toUpperCase()) {
       case 'H': return 'H';
@@ -134,11 +232,31 @@ export class RPGParser {
           break;
           
         case 'D':
-        case 'P':
-          // D-spec and P-spec: name field (columns 7-21) must be blank
+          // D-spec: name field (col7-21) が空白でも、宣言型(col24-25)がある場合は
+          // 新しい宣言（無名DS、SDS等）であり、継続行ではない。
+          // 名前フィールドが空白 かつ 宣言型フィールドも空白 の場合のみ継続行。
           if (line.length >= 21) {
             const name = line.substring(6, 21).trim();
-            return name.length === 0;
+            if (name.length > 0) return false; // 名前あり = 継続行ではない
+            // 名前なし: 宣言型(col24-25)をチェック
+            if (line.length >= 25) {
+              const declType = line.substring(23, 25).trim();
+              if (declType.length > 0) return false; // 宣言型あり = 新しい宣言
+            }
+            // col22-23にDS/PR/PI等がある場合も新しい宣言（誤配置だが継続行ではない）
+            if (line.length >= 23) {
+              const col22_23 = line.substring(21, 23).trim().toUpperCase();
+              if (['DS', 'PR', 'PI', 'S', 'C'].includes(col22_23)) return false;
+            }
+            return true; // 名前も宣言型もない = 継続行
+          }
+          break;
+
+        case 'P':
+          // P-spec: name field (columns 7-21) must be blank
+          if (line.length >= 21) {
+            const pName = line.substring(6, 21).trim();
+            return pName.length === 0;
           }
           break;
           
@@ -151,11 +269,17 @@ export class RPGParser {
           break;
           
         case 'C':
-          // C-spec: factor 1 field (columns 12-25) must be blank for continuation
-          // Note: C-spec continuation is more complex, this is a simplified check
-          if (line.length >= 25) {
-            const factor1 = line.substring(11, 25).trim();
-            return factor1.length === 0;
+          // C-spec: 継続行の判定はC仕様書では困難。
+          // factor1が空白なだけのC仕様書行（EVAL, EXSR, IF等）は独立した命令であり、
+          // 継続行ではない。C仕様書の継続行は通常、
+          // factor2やresultフィールドの拡張であり、opcodeも空白になる。
+          if (line.length >= 35) {
+            const opcode = line.substring(25, 35).trim();
+            // opcodeも空白の場合のみ継続行と判定
+            if (opcode.length === 0) {
+              const factor1 = line.substring(11, 25).trim();
+              return factor1.length === 0;
+            }
           }
           break;
           

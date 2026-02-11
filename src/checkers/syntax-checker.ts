@@ -72,32 +72,40 @@ export class SyntaxChecker implements Checker {
             codeSnippet: line.rawContent
           });
         } else {
-          const prevLine = lines[i - 1];
+          // コメント行をスキップして、直前の実コード行を検索
+          // RPGではD仕様書の定数継続行やC仕様書の間にコメントを挟むことが一般的
+          let prevCodeLine = lines[i - 1];
+          let prevCodeIdx = i - 1;
+          while (prevCodeIdx > 0 && prevCodeLine.isComment) {
+            prevCodeIdx--;
+            prevCodeLine = lines[prevCodeIdx];
+          }
 
-          // 前の行がコメント行でないことを確認
-          if (prevLine.isComment) {
+          // 直前のコード行がコメントしかない場合（ファイル先頭付近）
+          if (prevCodeLine.isComment) {
             issues.push({
               severity: 'error',
               category: 'syntax',
               line: line.lineNumber,
               column: 7,
-              message: '継続行の前の行がコメント行です。',
+              message: '継続行の前にコメント行のみがあります。',
               rule: 'CONTINUATION_AFTER_COMMENT',
               suggestion: 'コメント行の後に継続行を配置することはできません。',
               codeSnippet: line.rawContent
             });
           }
 
-          // 前の行が同じ仕様書タイプかチェック
-          if (prevLine.specificationType !== line.specificationType &&
-              prevLine.specificationType !== 'UNKNOWN' &&
+          // 前のコード行が同じ仕様書タイプかチェック
+          if (!prevCodeLine.isComment &&
+              prevCodeLine.specificationType !== line.specificationType &&
+              prevCodeLine.specificationType !== 'UNKNOWN' &&
               line.specificationType !== 'UNKNOWN') {
             issues.push({
               severity: 'error',
               category: 'syntax',
               line: line.lineNumber,
               column: 7,
-              message: `継続行の仕様書タイプ（${line.specificationType}）が前の行（${prevLine.specificationType}）と一致しません。`,
+              message: `継続行の仕様書タイプ（${line.specificationType}）が前の行（${prevCodeLine.specificationType}）と一致しません。`,
               rule: 'CONTINUATION_TYPE_MISMATCH',
               ruleDescription: '継続行は前の行と同じ仕様書タイプである必要があります。',
               codeSnippet: line.rawContent

@@ -55,8 +55,13 @@ export class StructureChecker implements Checker {
    */
   private checkSpecificationOrder(lines: ParsedLine[]): Issue[] {
     const issues: Issue[] = [];
-    const expectedOrder = ['H', 'F', 'D', 'P', 'I', 'C', 'O'];
-    let lastSpecIndex = -1;
+    // RPG IVのソース構成:
+    //   メインセクション: H → F → D → I → C → O
+    //   サブプロシージャセクション: P → D → C → P (繰り返し可)
+    // P仕様書はO仕様書の後に出現可能（サブプロシージャセクション開始）
+    const mainOrder = ['H', 'F', 'D', 'I', 'C', 'O'];
+    let lastMainSpecIndex = -1;
+    let inProcedureSection = false; // サブプロシージャセクションに入ったか
     let inProcedure = false; // P...B/P...Eブロック内かどうか
 
     for (const line of lines) {
@@ -73,37 +78,49 @@ export class StructureChecker implements Checker {
           const beginEnd = line.rawContent[23].toUpperCase();
           if (beginEnd === 'B') {
             inProcedure = true;
+            inProcedureSection = true;
           } else if (beginEnd === 'E') {
             inProcedure = false;
           }
         }
+        // P仕様書はサブプロシージャセクション開始を示す
+        if (!inProcedureSection) {
+          inProcedureSection = true;
+        }
+        continue; // P仕様書自体は順序チェック対象外
       }
 
-      const currentSpecIndex = expectedOrder.indexOf(line.specificationType);
-      if (currentSpecIndex === -1) continue;
-
-      // P...B/P...Eブロック内のD仕様書・C仕様書は順序チェック対象外
-      // （ローカル変数定義やプロシージャI/Fは正常）
-      if (inProcedure && (line.specificationType === 'D' || line.specificationType === 'C')) {
+      // サブプロシージャセクション内のD/C仕様書は順序チェック対象外
+      // （ローカル変数定義やプロシージャI/F、ローカル計算は正常）
+      if (inProcedureSection && (line.specificationType === 'D' || line.specificationType === 'C')) {
         continue;
       }
 
+      // サブプロシージャセクション内のO仕様書は順序チェック対象外
+      // （O仕様書は通常メインセクションだが、P-E後のO仕様書は特殊ケース）
+      if (inProcedureSection) {
+        continue;
+      }
+
+      const currentSpecIndex = mainOrder.indexOf(line.specificationType);
+      if (currentSpecIndex === -1) continue;
+
       // 順序が逆転している場合
-      if (currentSpecIndex < lastSpecIndex) {
+      if (currentSpecIndex < lastMainSpecIndex) {
         issues.push({
           severity: 'error',
           category: 'structure',
           line: line.lineNumber,
           column: 6,
-          message: `仕様書の順序が不正です。${line.specificationType}仕様書は${expectedOrder[lastSpecIndex]}仕様書の後に配置できません。`,
+          message: `仕様書の順序が不正です。${line.specificationType}仕様書は${mainOrder[lastMainSpecIndex]}仕様書の後に配置できません。`,
           rule: 'SPEC_ORDER',
-          ruleDescription: '仕様書は H→F→D→P→I→C→O の順序で記述する必要があります（P...B/P...E内のD/C仕様書はローカル定義として許容）。',
+          ruleDescription: 'メインセクションの仕様書は H→F→D→I→C→O の順序で記述する必要があります。サブプロシージャ（P仕様書）はメインセクションの後に配置します。',
           suggestion: `${line.specificationType}仕様書を適切な位置に移動してください。`,
           codeSnippet: line.rawContent
         });
       }
 
-      lastSpecIndex = currentSpecIndex;
+      lastMainSpecIndex = currentSpecIndex;
     }
 
     return issues;

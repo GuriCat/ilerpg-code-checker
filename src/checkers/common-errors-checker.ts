@@ -319,34 +319,52 @@ export class CommonErrorsChecker implements Checker {
    */
   private checkSpecificationOrderErrors(lines: ParsedLine[]): Issue[] {
     const issues: Issue[] = [];
-    const expectedOrder = ['H', 'F', 'D', 'P', 'I', 'C', 'O'];
 
-    // 各仕様書タイプの最初の出現位置を記録
-    const firstOccurrence = new Map<string, number>();
+    // メインセクションのD仕様書とC仕様書の最初の出現位置を記録
+    // （P仕様書のB-Eブロック内のD/Cは除外）
+    let inProcedure = false;
+    let firstMainCLine: number | null = null;
+    let firstMainDAfterC: number | null = null;
 
     for (const line of lines) {
-      if (line.isComment || line.specificationType === 'UNKNOWN' || 
+      if (line.isComment || line.specificationType === 'UNKNOWN' ||
           line.specificationType === 'FREE' || line.specificationType === 'COMMENT') {
         continue;
       }
 
-      if (!firstOccurrence.has(line.specificationType)) {
-        firstOccurrence.set(line.specificationType, line.lineNumber);
+      // P仕様書のB/E追跡
+      if (line.specificationType === 'P' && line.rawContent.length >= 24) {
+        const pTrimmedEnd = line.rawContent.trimEnd();
+        if (!pTrimmedEnd.endsWith('...')) {
+          const beginEnd = line.rawContent[23].toUpperCase();
+          if (beginEnd === 'B') inProcedure = true;
+          else if (beginEnd === 'E') inProcedure = false;
+        }
+      }
+
+      // サブプロシージャ内のD/Cは順序チェック対象外
+      if (inProcedure) continue;
+
+      // メインセクションでのC仕様書の最初の出現
+      if (line.specificationType === 'C' && firstMainCLine === null) {
+        firstMainCLine = line.lineNumber;
+      }
+
+      // メインセクションでC仕様書の後にD仕様書がある場合
+      if (line.specificationType === 'D' && firstMainCLine !== null && firstMainDAfterC === null) {
+        firstMainDAfterC = line.lineNumber;
       }
     }
 
-    // C仕様書の後にD仕様書がある場合（よくあるエラー）
-    const cLine = firstOccurrence.get('C');
-    const dLine = firstOccurrence.get('D');
-    if (cLine && dLine && dLine > cLine) {
+    if (firstMainCLine !== null && firstMainDAfterC !== null) {
       issues.push({
         severity: 'error',
         category: 'structure',
-        line: dLine,
+        line: firstMainDAfterC,
         message: 'D仕様書がC仕様書の後に配置されています。',
         rule: 'D_AFTER_C',
-        ruleDescription: 'D仕様書（定義）はC仕様書（演算）の前に配置する必要があります。',
-        suggestion: `D仕様書を行${cLine}より前に移動してください。`
+        ruleDescription: 'メインセクションのD仕様書（定義）はC仕様書（演算）の前に配置する必要があります。サブプロシージャ内のD仕様書は別です。',
+        suggestion: `D仕様書を行${firstMainCLine}より前に移動してください。`
       });
     }
 
@@ -355,6 +373,14 @@ export class CommonErrorsChecker implements Checker {
 
   /**
    * 括弧の対応をチェック
+   *
+   * RPGでは以下のケースで1行内の括弧が不一致になることがある:
+   * - D仕様書の継続行（DIM(x), OVERLAY(x:y) 等が複数行にまたがる）
+   * - C仕様書の継続行（EVAL等の式が複数行にまたがる）
+   * - 文字列リテラル内の括弧
+   *
+   * 継続行パターンを考慮し、継続行は前の行とまとめてチェックする。
+   *
    * @param lines パース済み行の配列
    * @returns 検出された問題の配列
    */
@@ -362,21 +388,37 @@ export class CommonErrorsChecker implements Checker {
     const issues: Issue[] = [];
 
     for (const line of lines) {
-      if (line.isComment || line.specificationType === 'UNKNOWN') continue;
+      if (line.isComment || line.specificationType === 'UNKNOWN' ||
+          line.specificationType === 'FREE' || line.specificationType === 'COMMENT') continue;
 
-      // 括弧のカウント
-      const openCount = (line.rawContent.match(/\(/g) || []).length;
-      const closeCount = (line.rawContent.match(/\)/g) || []).length;
+      // 継続行は前の行の一部なのでスキップ（まとめてチェックしない簡易版）
+      if (line.isContinuation) continue;
+
+      // 次の継続行をまとめて括弧をカウント
+      const idx = lines.indexOf(line);
+      let combined = line.rawContent;
+      for (let j = idx + 1; j < lines.length; j++) {
+        if (lines[j].isContinuation && lines[j].specificationType === line.specificationType) {
+          combined += lines[j].rawContent;
+        } else if (!lines[j].isComment) {
+          break;
+        }
+      }
+
+      // 文字列リテラル内の括弧を除外
+      const withoutStrings = combined.replace(/'[^']*'/g, '');
+      const openCount = (withoutStrings.match(/\(/g) || []).length;
+      const closeCount = (withoutStrings.match(/\)/g) || []).length;
 
       if (openCount !== closeCount) {
         issues.push({
-          severity: 'error',
+          severity: 'warning',
           category: 'syntax',
           line: line.lineNumber,
           message: `括弧の対応が取れていません（開き括弧: ${openCount}、閉じ括弧: ${closeCount}）。`,
           rule: 'UNMATCHED_PARENTHESES',
           ruleDescription: '開き括弧と閉じ括弧の数は一致する必要があります。',
-          suggestion: '括弧の数を確認し、不足している括弧を追加してください。',
+          suggestion: '括弧の数を確認し、不足している括弧を追加してください。継続行で閉じている場合は問題ありません。',
           codeSnippet: line.rawContent
         });
       }
@@ -387,6 +429,13 @@ export class CommonErrorsChecker implements Checker {
 
   /**
    * 文字列リテラルのチェック
+   *
+   * RPGでは以下のケースで1行内のクォートが不一致になることがある:
+   * - D仕様書のhex定数（X'4142...'が複数行にまたがる）
+   * - 継続行で文字列が分割されている場合
+   *
+   * 継続行の場合はスキップし、hex定数の行末不一致は許容する。
+   *
    * @param lines パース済み行の配列
    * @returns 検出された問題の配列
    */
@@ -394,19 +443,38 @@ export class CommonErrorsChecker implements Checker {
     const issues: Issue[] = [];
 
     for (const line of lines) {
-      if (line.isComment || line.specificationType === 'UNKNOWN') continue;
+      if (line.isComment || line.specificationType === 'UNKNOWN' ||
+          line.specificationType === 'FREE' || line.specificationType === 'COMMENT') continue;
 
-      // シングルクォートの対応チェック
-      const singleQuotes = (line.rawContent.match(/'/g) || []).length;
+      // 継続行はスキップ（前の行と合わせて文字列が完結する可能性がある）
+      if (line.isContinuation) continue;
+
+      // hex定数（X'...'）や継続される定数のパターンはスキップ
+      // 行末にハイフン('-')がある場合は継続行の開始
+      const trimmedEnd = line.rawContent.trimEnd();
+      if (trimmedEnd.endsWith('-') || trimmedEnd.endsWith('+')) continue;
+
+      // 次の継続行をまとめてクォートをカウント
+      const idx = lines.indexOf(line);
+      let combined = line.rawContent;
+      for (let j = idx + 1; j < lines.length; j++) {
+        if (lines[j].isContinuation && lines[j].specificationType === line.specificationType) {
+          combined += lines[j].rawContent;
+        } else if (!lines[j].isComment) {
+          break;
+        }
+      }
+
+      const singleQuotes = (combined.match(/'/g) || []).length;
       if (singleQuotes % 2 !== 0) {
         issues.push({
-          severity: 'error',
+          severity: 'warning',
           category: 'syntax',
           line: line.lineNumber,
           message: 'シングルクォート（\'）の対応が取れていません。',
           rule: 'UNMATCHED_QUOTES',
           ruleDescription: '文字列リテラルは開始と終了のクォートが必要です。',
-          suggestion: '不足しているクォートを追加してください。',
+          suggestion: '不足しているクォートを追加してください。継続行で閉じている場合は問題ありません。',
           codeSnippet: line.rawContent
         });
       }
