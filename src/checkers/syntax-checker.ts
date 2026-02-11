@@ -115,30 +115,86 @@ export class SyntaxChecker implements Checker {
 
   /**
    * 複数命令の1行記述をチェック
+   *
+   * DSPEC_COLUMN_FIX.md 7.5:
+   * C仕様書（自由形式）で1行に複数文を書くことはできない（RNF5508）。
+   * **FREE形式でも同様。
+   *
+   * 間違い例:
+   *   outArr(1) = 65; outArr(2) = 768;
+   * 修正:
+   *   outArr(1) = 65;
+   *   outArr(2) = 768;
+   *
    * @param lines パース済み行の配列
    * @returns 検出された問題の配列
    */
   private checkMultipleStatements(lines: ParsedLine[]): Issue[] {
     const issues: Issue[] = [];
+    let inFreeBlock = false;
+    // **FREE形式かどうか
+    const isFullyFree = lines.some(l => l.specificationType === 'FREE');
 
     for (const line of lines) {
-      // 桁固定形式・桁制限付き自由形式では1行に1命令のみ
-      if (line.specificationType === 'C' && !line.isComment) {
-        // セミコロンの数をカウント（複数命令の可能性）
-        const semicolonCount = (line.rawContent.match(/;/g) || []).length;
+      // /FREE ブロックの追跡
+      const trimmedUpper = line.trimmedContent.toUpperCase();
+      if (trimmedUpper.startsWith('/FREE')) {
+        inFreeBlock = true;
+        continue;
+      }
+      if (trimmedUpper.startsWith('/END-FREE')) {
+        inFreeBlock = false;
+        continue;
+      }
 
-        if (semicolonCount > 1) {
-          issues.push({
-            severity: 'error',
-            category: 'syntax',
-            line: line.lineNumber,
-            message: '1行に複数の命令が記述されています。',
-            rule: 'MULTIPLE_STATEMENTS',
-            ruleDescription: '桁固定形式・桁制限付き自由形式では、1行に1つの命令のみ記述できます。',
-            suggestion: '各命令を別々の行に分割してください。',
-            codeSnippet: line.rawContent
-          });
-        }
+      if (line.isComment) continue;
+
+      // 文字列リテラル内のセミコロンを除外してカウント
+      const contentWithoutStrings = line.rawContent.replace(/'[^']*'/g, '');
+      const semicolonCount = (contentWithoutStrings.match(/;/g) || []).length;
+
+      // C仕様書（自由形式計算部分）
+      if (line.specificationType === 'C' && semicolonCount > 1) {
+        issues.push({
+          severity: 'error',
+          category: 'syntax',
+          line: line.lineNumber,
+          message: `1行に複数の命令が記述されています（セミコロン${semicolonCount}個）。RPGでは1行に1文のみ記述可能です。`,
+          rule: 'MULTIPLE_STATEMENTS',
+          ruleDescription: 'RPGの自由形式では、1行に1つの命令のみ記述できます（RNF5508）。',
+          suggestion: '各命令を別々の行に分割してください。',
+          codeSnippet: line.rawContent
+        });
+      }
+
+      // /FREE ブロック内の行
+      if (inFreeBlock && semicolonCount > 1) {
+        issues.push({
+          severity: 'error',
+          category: 'syntax',
+          line: line.lineNumber,
+          message: `1行に複数の命令が記述されています（セミコロン${semicolonCount}個）。/FREEブロック内では1行に1文のみ記述可能です。`,
+          rule: 'MULTIPLE_STATEMENTS',
+          ruleDescription: '/FREEブロック内では、1行に1つの命令のみ記述できます（RNF5508）。',
+          suggestion: '各命令を別々の行に分割してください。',
+          codeSnippet: line.rawContent
+        });
+      }
+
+      // **FREE形式の行（仕様書タイプがUNKNOWNで、**FREE行以降の通常コード行）
+      if (isFullyFree && line.specificationType === 'UNKNOWN' &&
+          line.trimmedContent.length > 0 && !line.trimmedContent.startsWith('**') &&
+          !line.trimmedContent.startsWith('//') && semicolonCount > 1) {
+        issues.push({
+          severity: 'error',
+          category: 'syntax',
+          line: line.lineNumber,
+          message: `1行に複数の命令が記述されています（セミコロン${semicolonCount}個）。**FREE形式では1行に1文のみ記述可能です。`,
+          rule: 'MULTIPLE_STATEMENTS',
+          ruleDescription: '**FREE形式では、1行に1つの命令のみ記述できます（RNF5508）。',
+          suggestion: '各命令を別々の行に分割してください。',
+          codeSnippet: line.rawContent
+        });
       }
     }
 

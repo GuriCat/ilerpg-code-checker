@@ -1,6 +1,6 @@
 {
   "name": "ilerpg-code-checker",
-  "version": "0.0.5",
+  "version": "0.0.6",
   "description": "ILE-RPG Code Checker - MCP Server",
   "type": "module",
   "main": "build/index.js",
