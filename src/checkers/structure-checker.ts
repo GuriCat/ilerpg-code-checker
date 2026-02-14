@@ -39,6 +39,11 @@ export class StructureChecker implements Checker {
     // 行の長さのチェック
     issues.push(...this.checkLineLength(lines));
 
+    // 注釈領域のDBCSバイト長チェック（considerDBCS有効時のみ）
+    if (this.considerDBCS) {
+      issues.push(...this.checkCommentArea(lines));
+    }
+
     return issues;
   }
 
@@ -974,6 +979,57 @@ export class StructureChecker implements Checker {
           ruleDescription: 'A line must be at most 100 columns.',
           suggestion,
           codeSnippet: line.rawContent.substring(0, 50) + '...'
+        });
+      }
+    }
+
+    return issues;
+  }
+
+  /**
+   * 注釈領域（col81-100）のDBCSバイト長チェック
+   *
+   * UTF-8ソースをCRTRPGMOD TGTCCSID(5035)でコンパイルする際、
+   * 日本語(DBCS)文字はSO/SIフレーム付きEBCDICに変換される。
+   * col81-100は20 EBCDICバイトの注釈領域であり、これを超過するとRNF3308エラーになる。
+   *
+   * @param lines パース済み行の配列
+   * @returns 検出された問題の配列
+   */
+  private checkCommentArea(lines: ParsedLine[]): Issue[] {
+    const issues: Issue[] = [];
+    const maxCommentBytes = 20; // col81-100 = 20 EBCDIC bytes
+
+    for (const line of lines) {
+      // コメント行、80文字以下の行はスキップ
+      if (line.isComment || line.rawContent.length <= 80) continue;
+
+      // 固定形式仕様書行（H/F/D/P/I/C/O）のみ対象
+      const specType = line.specificationType;
+      if (!['H', 'F', 'D', 'P', 'I', 'C', 'O'].includes(specType)) continue;
+
+      // col81以降（index 80+）を抽出
+      const commentArea = line.rawContent.substring(80);
+      if (commentArea.trim().length === 0) continue;
+
+      // DBCS文字を含まない場合はASCIIのみ — 20文字以下なら問題なし
+      if (!DBCSHelper.containsDBCS(commentArea)) continue;
+
+      const byteLength = DBCSHelper.calculateByteLength(commentArea);
+      if (byteLength > maxCommentBytes) {
+        const analysis = DBCSHelper.analyzeString(commentArea);
+        const corrected = line.rawContent.substring(0, 80);
+        issues.push({
+          severity: 'warning',
+          category: 'structure',
+          line: line.lineNumber,
+          column: 81,
+          message: `注釈領域(col81-100)のEBCDICバイト長が${byteLength}バイトで、上限${maxCommentBytes}バイトを超えています。TGTCCSID(5035)でコンパイルするとRNF3308エラーになる可能性があります。(DBCS ${analysis.dbcsCount}文字, SO/SI ${analysis.shiftCharacters}バイト)`,
+          rule: 'COMMENT_DBCS_OVERFLOW',
+          ruleDescription: 'col81-100はEBCDIC 5035で20バイトの注釈領域です。日本語(DBCS)文字はSO/SIフレーム付きで展開されるため、日本語のみの場合は最大9文字です。',
+          suggestion: '注釈を短くしてください。日本語のみの場合は最大9文字、ASCII混在の場合は合計20 EBCDICバイト以内にしてください。',
+          codeSnippet: line.rawContent,
+          correctedCode: corrected
         });
       }
     }
