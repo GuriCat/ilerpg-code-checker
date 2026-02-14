@@ -317,34 +317,34 @@ Create a JSON file to define custom best practice rules:
 
 ### Structure Errors
 
-```rpg
+```text
 F-spec
 H-spec  ← Error: H-spec must be placed before F-spec
 ```
 
 ### Column Position Errors
 
-```rpg
+```text
 D MyVariable    S             10A  ← Error: Variable name is not in correct column position
 ```
 
 ### Line Continuation Errors
 
-```rpg
+```text
 D MyLongVariableName
 D-                    S             10A  ← Error: Continuation line spec type mismatch
 ```
 
 ### Naming Convention Violations
 
-```rpg
+```text
 D x               S             10A  ← Warning: Variable name is too short
 D 1stVar          S             10A  ← Error: Variable name cannot start with a number
 ```
 
 ### Deprecated Features
 
-```rpg
+```text
 C                   GOTO      Label  ← Warning: GOTO is deprecated
 C     Label        TAG
 ```
@@ -353,7 +353,7 @@ C     Label        TAG
 
 When `considerDBCS: true`:
 
-```rpg
+```text
 D MyVar           S             10A   INZ('日本語')
   ↑ Correctly accounts for shift characters in column position check
 ```

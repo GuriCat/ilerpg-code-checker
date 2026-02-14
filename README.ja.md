@@ -317,34 +317,34 @@ JSONファイルを作成してカスタムベストプラクティスルール�
 
 ### 構造エラー
 
-```rpg
+```text
 F仕様書
 H仕様書  ← エラー: H仕様書はF仕様書より前に配置する必要があります
 ```
 
 ### 桁位置エラー
 
-```rpg
+```text
 D MyVariable    S             10A  ← エラー: 変数名が正しい桁位置にありません
 ```
 
 ### 行継続エラー
 
-```rpg
+```text
 D MyLongVariableName
 D-                    S             10A  ← エラー: 継続行の仕様書タイプが一致しません
 ```
 
 ### 命名規約違反
 
-```rpg
+```text
 D x               S             10A  ← 警告: 変数名が短すぎます
 D 1stVar          S             10A  ← エラー: 変数名は数字で始められません
 ```
 
 ### 非推奨機能
 
-```rpg
+```text
 C                   GOTO      Label  ← 警告: GOTOは非推奨です
 C     Label        TAG
 ```
@@ -353,7 +353,7 @@ C     Label        TAG
 
 `considerDBCS: true` の場合：
 
-```rpg
+```text
 D MyVar           S             10A   INZ('日本語')
   ↑ 桁位置チェックでシフト文字を正しく考慮します
 ```
