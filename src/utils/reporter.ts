@@ -134,9 +134,14 @@ export class Reporter {
       lines.push(`  ${msg.getMessage('suggestion')}: ${issue.suggestion}`);
     }
 
-    // Code snippet
-    if (verbose && issue.codeSnippet) {
-      lines.push(`  ${msg.getMessage('code')}: ${issue.codeSnippet}`);
+    // Code snippet with Before/After display
+    if (issue.codeSnippet) {
+      if (issue.correctedCode) {
+        lines.push(`  ${msg.getMessage('before')}: ${issue.codeSnippet}`);
+        lines.push(`  ${msg.getMessage('after')}:  ${issue.correctedCode}`);
+      } else if (verbose) {
+        lines.push(`  ${msg.getMessage('code')}: ${issue.codeSnippet}`);
+      }
     }
 
     return lines.join('\n');
@@ -272,9 +277,14 @@ export class Reporter {
       lines.push(`  - **${msg.getMessage('suggestion')}:** ${issue.suggestion}`);
     }
 
-    // Code snippet
-    if (verbose && issue.codeSnippet) {
-      lines.push(`  - **${msg.getMessage('code')}:** \`${issue.codeSnippet}\``);
+    // Code snippet with Before/After display
+    if (issue.codeSnippet) {
+      if (issue.correctedCode) {
+        lines.push(`  - **${msg.getMessage('before')}:** \`${issue.codeSnippet}\``);
+        lines.push(`  - **${msg.getMessage('after')}:**  \`${issue.correctedCode}\``);
+      } else if (verbose) {
+        lines.push(`  - **${msg.getMessage('code')}:** \`${issue.codeSnippet}\``);
+      }
     }
 
     lines.push('');

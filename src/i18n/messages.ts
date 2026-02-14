@@ -60,6 +60,8 @@ export interface Messages {
   description: string;
   suggestion: string;
   code: string;
+  before: string;
+  after: string;
 }
 
 const englishMessages: Messages = {
@@ -116,7 +118,9 @@ const englishMessages: Messages = {
   rule: 'Rule',
   description: 'Description',
   suggestion: 'Suggestion',
-  code: 'Code'
+  code: 'Code',
+  before: 'Before',
+  after: 'After'
 };
 
 const japaneseMessages: Messages = {
@@ -173,7 +177,9 @@ const japaneseMessages: Messages = {
   rule: 'ルール',
   description: '説明',
   suggestion: '提案',
-  code: 'コード'
+  code: 'コード',
+  before: '修正前',
+  after: '修正後'
 };
 
 /**

@@ -73,6 +73,8 @@ export class CommonErrorsChecker implements Checker {
 
         // If filename uses all 10 characters and next column is not a space
         if (fileName.trim().length === 10 && nextChar !== ' ') {
+          // 修正コード生成: col17にスペースを挿入
+          const corrected = line.rawContent.substring(0, 16) + ' ' + line.rawContent.substring(16);
           issues.push({
             severity: 'error',
             category: 'structure',
@@ -82,7 +84,8 @@ export class CommonErrorsChecker implements Checker {
             rule: 'F_SPEC_SPACING',
             ruleDescription: 'ファイル名が10文字の場合、17桁目はスペースである必要があります。',
             suggestion: '17桁目にスペースを挿入してください。',
-            codeSnippet: line.rawContent
+            codeSnippet: line.rawContent,
+            correctedCode: corrected
           });
         }
       }
@@ -116,8 +119,9 @@ export class CommonErrorsChecker implements Checker {
       if (line.specificationType !== 'D' || line.isComment || line.isContinuation) continue;
 
       // 名前継続行（...で終わる行）はスキップ — 桁位置ルールが通常と異なる
-      const trimmedEnd = line.rawContent.trimEnd();
-      if (trimmedEnd.endsWith('...')) continue;
+      // col81-100はコメント領域のため、col1-80のみで判定する。
+      const codeArea = line.rawContent.substring(0, Math.min(80, line.rawContent.length)).trimEnd();
+      if (codeArea.endsWith('...')) continue;
 
       // If name field (columns 7-21) is empty but other fields have values
       const name = line.rawContent.substring(6, Math.min(21, line.rawContent.length)).trim();
@@ -184,6 +188,11 @@ export class CommonErrorsChecker implements Checker {
           // サイズフィールドに「数値+型文字」パターンがある = 桁ずれの可能性
           const expectedSize = sizeField.slice(0, -1);
           const expectedType = sizeField.slice(-1);
+          // 修正コード生成: サイズを右詰め7桁 + データ型1桁に分離
+          const raw = line.rawContent;
+          const padded = raw.padEnd(42);
+          const correctedSize = expectedSize.padStart(7);
+          const corrected = padded.substring(0, 32) + correctedSize + expectedType.toUpperCase() + padded.substring(40);
           issues.push({
             severity: 'error',
             category: 'structure',
@@ -194,7 +203,8 @@ export class CommonErrorsChecker implements Checker {
             rule: 'D_SPEC_COLUMN_SHIFT',
             ruleDescription: `サイズ（33-39桁）には数値のみ、データ型（40桁）には型文字のみ記述します。'${expectedSize}'をサイズフィールドに右詰め、'${expectedType}'を40桁に配置してください。`,
             suggestion: `桁位置を修正してください。正しくは: サイズ'${expectedSize}'（33-39桁、右詰め）+ データ型'${expectedType}'（40桁）。`,
-            codeSnippet: line.rawContent
+            codeSnippet: line.rawContent,
+            correctedCode: corrected
           });
         }
       }
@@ -334,8 +344,8 @@ export class CommonErrorsChecker implements Checker {
 
       // P仕様書のB/E追跡
       if (line.specificationType === 'P' && line.rawContent.length >= 24) {
-        const pTrimmedEnd = line.rawContent.trimEnd();
-        if (!pTrimmedEnd.endsWith('...')) {
+        const pCodeArea = line.rawContent.substring(0, Math.min(80, line.rawContent.length)).trimEnd();
+        if (!pCodeArea.endsWith('...')) {
           const beginEnd = line.rawContent[23].toUpperCase();
           if (beginEnd === 'B') inProcedure = true;
           else if (beginEnd === 'E') inProcedure = false;

@@ -67,8 +67,10 @@ export interface Issue {
   ruleDescription?: string;
   /** 修正提案（オプション） */
   suggestion?: string;
-  /** 問題のあるコードスニペット（オプション） */
+  /** 問題のあるコードスニペット（オプション、Before行） */
   codeSnippet?: string;
+  /** 修正後のコード（オプション、After行 — codeSnippetとの対で提示） */
+  correctedCode?: string;
 }
 
 /**

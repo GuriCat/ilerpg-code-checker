@@ -73,8 +73,8 @@ export class StructureChecker implements Checker {
 
       // P仕様書のB/E追跡（名前継続行は除外）
       if (line.specificationType === 'P' && line.rawContent.length >= 24) {
-        const pTrimmedEnd = line.rawContent.trimEnd();
-        if (!pTrimmedEnd.endsWith('...')) {
+        const pCodeArea = line.rawContent.substring(0, Math.min(80, line.rawContent.length)).trimEnd();
+        if (!pCodeArea.endsWith('...')) {
           const beginEnd = line.rawContent[23].toUpperCase();
           if (beginEnd === 'B') {
             inProcedure = true;
@@ -343,8 +343,9 @@ export class StructureChecker implements Checker {
     // RPGでは15文字を超える名前を `D longName...` と書き、
     // `...`が通常の桁位置フィールド（col22-25等）に重なることがある。
     // この行は名前フィールドの拡張であり、通常の桁位置ルールは適用されない。
-    const trimmedEnd = line.rawContent.trimEnd();
-    if (trimmedEnd.endsWith('...')) {
+    // col81-100はコメント領域のため、col1-80のみで判定する。
+    const codeArea = line.rawContent.substring(0, Math.min(80, line.rawContent.length)).trimEnd();
+    if (codeArea.endsWith('...')) {
       // 名前継続行固有のチェックのみ実行
       issues.push(...this.checkDSpecNameContinuation(line));
       return issues;
@@ -504,6 +505,10 @@ export class StructureChecker implements Checker {
         const rawChar39 = line.rawContent[38]; // 桁39 (0-indexed: 38)
         if (rawChar39 === '*') {
           // 桁39に*がある（桁40ではない）= 桁ずれ
+          // 修正コード生成: 桁39の*を消してcol40に移動
+          const raw = line.rawContent;
+          const padded = raw.padEnd(40);
+          const corrected = padded.substring(0, 38) + ' *' + padded.substring(40);
           issues.push({
             severity: 'error',
             category: 'structure',
@@ -514,7 +519,8 @@ export class StructureChecker implements Checker {
             rule: 'D_SPEC_POINTER_POSITION',
             ruleDescription: 'ポインタ型(*)はデータ型フィールド（40桁）に配置する必要があります。サイズフィールド（33-39桁）には数値のみ記述できます。',
             suggestion: '桁位置がずれている可能性があります。ポインタ型\'*\'を40桁に配置してください。',
-            codeSnippet: line.rawContent
+            codeSnippet: line.rawContent,
+            correctedCode: corrected
           });
         }
       } else {
@@ -652,6 +658,9 @@ export class StructureChecker implements Checker {
     if (hasDeclType) {
       // 宣言名は桁7開始: nameField[0]（桁7）が非空白であるべき
       if (nameField[0] === ' ') {
+        // 修正コード生成: 名前を桁7開始に左詰め
+        const correctedName = nameTrimmed.padEnd(15);
+        const corrected = line.rawContent.substring(0, 6) + correctedName + line.rawContent.substring(21);
         issues.push({
           severity: 'warning',
           category: 'structure',
@@ -662,12 +671,16 @@ export class StructureChecker implements Checker {
           rule: 'D_SPEC_NAME_POSITION',
           ruleDescription: 'DS/PR/PI/S/C等の宣言名は桁7（D仕様書識別子の直後）から開始します。',
           suggestion: `'${nameTrimmed}'の前の余分なスペースを削除してください。`,
-          codeSnippet: line.rawContent
+          codeSnippet: line.rawContent,
+          correctedCode: corrected
         });
       }
     } else {
       // サブフィールドは桁8開始: nameField[0]（桁7）が空白、nameField[1]（桁8）が非空白
       if (nameTrimmed.length > 0 && nameField[0] !== ' ') {
+        // 修正コード生成: 桁7にスペースを入れて桁8から名前開始
+        const correctedName = ' ' + nameTrimmed.padEnd(14);
+        const corrected = line.rawContent.substring(0, 6) + correctedName + line.rawContent.substring(21);
         issues.push({
           severity: 'warning',
           category: 'structure',
@@ -678,7 +691,8 @@ export class StructureChecker implements Checker {
           rule: 'D_SPEC_NAME_POSITION',
           ruleDescription: 'サブフィールド（宣言型なし）は桁8から開始します（桁7は空白）。宣言名（DS/PR/PI等）と区別するためです。',
           suggestion: `'${nameTrimmed}'の前にスペースを1つ追加してください。`,
-          codeSnippet: line.rawContent
+          codeSnippet: line.rawContent,
+          correctedCode: corrected
         });
       }
     }
@@ -747,6 +761,10 @@ export class StructureChecker implements Checker {
     // 名前の末尾にピリオドがあるかチェック（`...`継続は除外）
     if (nameField.endsWith('.') && !nameField.endsWith('...')) {
       const actualName = nameField.trim();
+      // 修正コード生成: ピリオドを除去
+      const corrected = line.rawContent.substring(0, 6) +
+        nameField.replace(/\.$/, '') +
+        line.rawContent.substring(nameEnd);
       issues.push({
         severity: 'error',
         category: 'syntax',
@@ -757,7 +775,8 @@ export class StructureChecker implements Checker {
         rule: 'D_SPEC_TRAILING_PERIOD',
         ruleDescription: 'サブフィールド名の末尾のピリオドは修飾名（qualified name）として解釈されるため、コンパイルエラーになります。名前継続には\'...\'（3つのピリオド）を使用してください。',
         suggestion: `ピリオドを除去してください。サイズやキーワードが次行にある場合は1行に統合してください。`,
-        codeSnippet: line.rawContent
+        codeSnippet: line.rawContent,
+        correctedCode: corrected
       });
     }
 
@@ -792,6 +811,10 @@ export class StructureChecker implements Checker {
 
       if (col24_25.length === 0) {
         // col22-23に宣言型があり、col24-25が空白 → 誤配置の可能性大
+        // 修正コード生成: col22-23を空白にし、col24-25に宣言型を移動
+        const raw = line.rawContent;
+        const padded = raw.padEnd(25);
+        const corrected = padded.substring(0, 21) + '  ' + col22_23Trimmed.padEnd(2) + padded.substring(25);
         issues.push({
           severity: 'error',
           category: 'structure',
@@ -802,7 +825,8 @@ export class StructureChecker implements Checker {
           rule: 'D_SPEC_DECL_TYPE_MISPLACED',
           ruleDescription: '宣言型（DS/PR/PI/S/C）はcol24-25に配置する必要があります。col22は外部記述(E/空白)、col23は予約フィールドです。col22-23に宣言型を置くとコンパイラが正しく認識できません（RNF3703等）。',
           suggestion: `'${col22_23Trimmed}'をcol24-25に移動してください。名前フィールド（col7-21、15桁）の長さが足りない可能性があります。`,
-          codeSnippet: line.rawContent
+          codeSnippet: line.rawContent,
+          correctedCode: corrected
         });
       }
     }
@@ -817,6 +841,10 @@ export class StructureChecker implements Checker {
           // col22にS/Cがあり、col23-24が空白 → col22に誤配置
           // ただしcol22='E'は正常（外部記述）なので除外
           if (col22.toUpperCase() !== 'E') {
+            // 修正コード生成: col22を空白にし、col24に宣言型を移動
+            const raw = line.rawContent;
+            const padded = raw.padEnd(25);
+            const corrected = padded.substring(0, 21) + '  ' + col22.toUpperCase() + ' ' + padded.substring(25);
             issues.push({
               severity: 'error',
               category: 'structure',
@@ -827,7 +855,8 @@ export class StructureChecker implements Checker {
               rule: 'D_SPEC_DECL_TYPE_MISPLACED',
               ruleDescription: '1文字の宣言型（S/C）はcol24に配置する必要があります。col22は外部記述フィールドです。',
               suggestion: `'${col22.toUpperCase()}'をcol24に移動してください。名前フィールドの桁位置を確認してください。`,
-              codeSnippet: line.rawContent
+              codeSnippet: line.rawContent,
+              correctedCode: corrected
             });
           }
         }
@@ -860,8 +889,9 @@ export class StructureChecker implements Checker {
     }
 
     // 名前継続行（...で終わる行）は桁位置チェックをスキップ
-    const trimmedEnd = line.rawContent.trimEnd();
-    if (trimmedEnd.endsWith('...')) {
+    // col81-100はコメント領域のため、col1-80のみで判定する。
+    const pCodeArea = line.rawContent.substring(0, Math.min(80, line.rawContent.length)).trimEnd();
+    if (pCodeArea.endsWith('...')) {
       return issues;
     }
 

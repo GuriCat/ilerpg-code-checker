@@ -56,6 +56,10 @@ export class NamingChecker implements Checker {
       // Skip comments and continuation lines
       if (line.specificationType !== 'D' || line.isComment || line.isContinuation) continue;
 
+      // 名前継続行（...で終わる行）はスキップ — 名前フィールドに'...'の一部が含まれるため
+      const codeArea = line.rawContent.substring(0, Math.min(80, line.rawContent.length)).trimEnd();
+      if (codeArea.endsWith('...')) continue;
+
       // Extract variable name
       const varName = this.analyzer.extractVariableName(line);
       if (!varName) continue;
